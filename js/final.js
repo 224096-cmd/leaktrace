@@ -127,10 +127,11 @@ LT.routes.final = function (app) {
     const weak = LT.FINAL.questions.filter(q => q.opts[answers[q.id]].risk >= 2);
     result.hidden = false;
     result.innerHTML = `<h2>ふり返りのまとめ</h2>
-      <div class="spread"><div>いまの行動の安全度（目安）</div><div class="huge">${safe}%</div></div>
+      <div class="spread"><div>いまの行動の安全度（目安）</div><div class="huge"><span id="safeNum">${safe}</span>%</div></div>
       <div class="progress mt"><div style="width:${safe}%;background:${safe > 70 ? "#1e8e3e" : safe > 40 ? "#b26a00" : "#c62828"}"></div></div>
       ${weak.length ? `<p class="mt">特に見直すとよいのは次の点です：</p><ul>${weak.map(q => `<li><b>${q.q}</b> → ${q.opts[answers[q.id]].effect}</li>`).join("")}</ul>` : `<p class="mt">どれも安全な習慣です。この状態を保ちましょう。</p>`}
       <p class="small">これは架空シナリオ上の目安です。学習記録に保存されました。</p>`;
+    LT.countUp(result.querySelector("#safeNum"), safe);
     LT.renderMap(mapCard.querySelector("#finalmap"));
     const s = LT.stageState("final"); if (!s.completedAt) { s.steps = { see: 1, break: 1, defend: 1 }; s.completedAt = new Date().toISOString(); LT.save(); LT.log("final", "", "stage_complete"); }
   }

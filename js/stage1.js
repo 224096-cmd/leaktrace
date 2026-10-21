@@ -34,7 +34,7 @@ LT.S1.see = async function (el) {
     <p class="small mt">同じ入力からは必ず同じハッシュ値が出ます。1文字変えるとまったく違う値になります。試してみてください。</p>
   </div>`;
   const pw = el.querySelector("#pw"), out = el.querySelector("#hash");
-  const upd = async () => { out.textContent = pw.value ? await LT.sha256hex(pw.value) : "—"; };
+  const upd = async () => { out.textContent = pw.value ? await LT.sha256hex(pw.value) : "—"; LT.flash(out); };
   pw.oninput = upd; upd();
 
   if (!intro) {

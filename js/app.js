@@ -40,6 +40,19 @@ LT.rand = (n) => Math.floor(Math.random() * n);
 LT.shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = LT.rand(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 LT.fmtNum = (n) => n.toLocaleString("ja-JP");
 
+/* 数字のカウントアップ（見た目だけ） */
+LT.countUp = function (el, to, opts) {
+  opts = opts || {};
+  const dur = (LT.mapReduceMotion && LT.mapReduceMotion()) ? 0 : (opts.dur || 900);
+  const fmt = opts.fmt || ((v) => Math.round(v).toLocaleString("ja-JP"));
+  if (!dur) { el.textContent = fmt(to); return; }
+  const t0 = performance.now();
+  const tick = (t) => { const k = Math.min(1, (t - t0) / dur); const e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(to * e); if (k < 1) requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+};
+/* 値が変わったことを一瞬光らせる */
+LT.flash = function (el) { el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); };
+
 LT.toast = function (msg) {
   const t = document.getElementById("toast");
   t.textContent = msg; t.hidden = false;
@@ -355,8 +368,8 @@ LT.routes.home = function (app) {
   </section>
 
   <div class="stats">
-    <div class="stat-card"><div class="stat-v">180<small>件</small></div><div class="stat-k">2025年に上場企業が公表した<br>個人情報の漏えい・紛失事故</div></div>
-    <div class="stat-card"><div class="stat-v">3,063<small>万人分</small></div><div class="stat-k">漏えい・紛失した人数<br>（前年の約1.9倍）</div></div>
+    <div class="stat-card"><div class="stat-v"><span data-count="180">180</span><small>件</small></div><div class="stat-k">2025年に上場企業が公表した<br>個人情報の漏えい・紛失事故</div></div>
+    <div class="stat-card"><div class="stat-v"><span data-count="3063">3,063</span><small>万人分</small></div><div class="stat-k">漏えい・紛失した人数<br>（前年の約1.9倍）</div></div>
     <div class="stat-card"><div class="stat-v">約3<small>割</small></div><div class="stat-k">攻撃者がいなくても起きた<br>誤送信・紛失などの事故</div></div>
   </div>
   <p class="small center">出典：東京商工リサーチ調べ（導入ステージの「実際の事件」に詳細）</p>
@@ -388,6 +401,7 @@ LT.routes.home = function (app) {
     if (!b.dataset.armed) { b.dataset.armed = "1"; b.textContent = "もう一度押すと消去します"; return; }
     LT.reset(); LT.toast("すべての記録を消去しました"); location.hash = "#/ethics";
   };
+  app.querySelectorAll("[data-count]").forEach(e => LT.countUp(e, Number(e.dataset.count)));
   const grid = app.querySelector("#stageGrid");
   items.forEach(it => {
     const s = it.stage, isNext = next && next.key === it.key;

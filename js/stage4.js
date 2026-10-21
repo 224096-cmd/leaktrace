@@ -91,7 +91,7 @@ LT.S4.break = function (el) {
   <div class="card attack">
     <h2><span class="badge warn">体験</span> 終業前の、いそがしい一斉送信</h2>
     <p>あなたは架空の「そら中学校」の先生です。会議の合間に「<b>2年生の保護者へ、6月号の学年だよりを送っておいて。保護者どうしのアドレスは見えないように。学年主任にも写しを</b>」と頼まれました。次の会議まであと少しです。</p>
-    <div class="spread"><div class="timer" id="timer">25.0</div><span class="small">急かされると確認がおろそかになりがちです</span></div>
+    <div class="spread"><div class="timer" id="timer">25.0</div><span class="small">急かされると確認がおろそかになりがちです</span></div><div class="timer-bar"><div id="timerBar" style="width:100%"></div></div>
     <div class="mailer mt" id="form">
       <div class="mailer-row"><b>添付</b><div class="file-pick" id="files">${files.map((f, i) => `<label class="file"><input type="radio" name="file" value="${LT.S4.files.indexOf(f)}"><span class="file-icon">${f.icon}</span><span><span class="file-name">${f.name}</span><small>${f.meta}</small></span></label>`).join("")}</div></div>
       <div class="table-wrap"><table><tr><th>宛先</th><th>To</th><th>Cc</th><th>Bcc</th></tr>
@@ -104,7 +104,7 @@ LT.S4.break = function (el) {
   </div>`;
   const form = el.querySelector("#form"), timerEl = el.querySelector("#timer");
   let t = 25.0, done = false;
-  const timer = setInterval(() => { t -= 0.1; if (t <= 0) { t = 0; clearInterval(timer); if (!done) submit(true); } timerEl.textContent = t.toFixed(1); timerEl.classList.toggle("low", t < 8); }, 100);
+  const timer = setInterval(() => { t -= 0.1; if (t <= 0) { t = 0; clearInterval(timer); if (!done) submit(true); } timerEl.textContent = t.toFixed(1); timerEl.classList.toggle("low", t < 8); const tb = el.querySelector("#timerBar"); if (tb) { tb.style.width = (t / 25 * 100) + "%"; tb.classList.toggle("low", t < 8); } }, 100);
   window.addEventListener("hashchange", () => { done = true; clearInterval(timer); }, { once: true });
   form.querySelector("#send").onclick = () => submit(false);
 

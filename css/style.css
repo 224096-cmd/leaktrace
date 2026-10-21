@@ -613,3 +613,52 @@ dl.gloss dd { margin: 2px 0 0; padding-bottom: 12px; border-bottom: 1px solid va
 .rt-dot { width: 100%; height: 5px; border-radius: 99px; background: var(--accent); opacity: .3; }
 .rt-dot.on { opacity: 1; }
 .rt-dot.bad { background: var(--ng); }
+
+/* ---------- 見た目の仕上げ（動き・表） ---------- */
+/* 棒グラフの棒が下から伸びる（ステージ1・4のグラフ） */
+#chart svg rect { transform-box: fill-box; transform-origin: center bottom; animation: growY .7s cubic-bezier(.2,.8,.3,1) both; }
+#chart svg rect:nth-of-type(2) { animation-delay: .06s; } #chart svg rect:nth-of-type(3) { animation-delay: .12s; } #chart svg rect:nth-of-type(4) { animation-delay: .18s; }
+#chart svg rect:nth-of-type(5) { animation-delay: .24s; } #chart svg rect:nth-of-type(6) { animation-delay: .30s; } #chart svg rect:nth-of-type(7) { animation-delay: .36s; }
+#chart svg text { animation: fadein .5s .35s both; }
+@keyframes growY { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+/* 横棒（導入の原因別・被害メーター）はすでに width で伸びる */
+/* 章の中のカードを順にふわっと */
+.chapter.in > div > .card, .chapter.in > div > details.deeper { animation: cardIn .45s ease both; }
+.chapter.in > div > .card:nth-child(2) { animation-delay: .08s; } .chapter.in > div > .card:nth-child(3) { animation-delay: .16s; } .chapter.in > div > .card:nth-child(4) { animation-delay: .24s; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+/* 値が変わったときの光り */
+.flash { animation: flashBg .7s ease; }
+@keyframes flashBg { 0% { background: #fff4bf; } 100% { background: #f7f8fa; } }
+/* 表：しま模様と行の強調 */
+.table-wrap tr:nth-child(even) td { background: #fafbfd; }
+.table-wrap tr:hover td { background: #f1f5fc; }
+.table-wrap th { position: sticky; top: 0; z-index: 1; }
+/* タイマーの残りを示すバー */
+.timer-bar { height: 6px; background: var(--track); border-radius: 99px; overflow: hidden; margin: 6px 0 12px; }
+.timer-bar > div { height: 100%; background: var(--accent); transition: width .1s linear, background .3s; }
+.timer-bar > div.low { background: var(--ng); }
+.timer.low { animation: timerPulse .6s ease-in-out infinite; }
+@keyframes timerPulse { 50% { opacity: .45; } }
+/* データの足あと：線が引かれる */
+.fp-wrap line { stroke-dasharray: 400; stroke-dashoffset: 400; animation: fpDraw .8s ease forwards; }
+.fp-wrap rect, .fp-wrap text { animation: fadein .5s ease both; }
+@keyframes fpDraw { to { stroke-dashoffset: 0; } }
+/* 共有範囲の同心円がふわっと広がる */
+#rings circle { transform-box: fill-box; transform-origin: center; animation: ringIn .5s ease both; }
+@keyframes ringIn { from { transform: scale(.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+/* 被害の表示（ステージ3）が順に出る */
+.impact-item { animation: cardIn .4s ease both; }
+.impact-item:nth-child(2) { animation-delay: .12s; } .impact-item:nth-child(3) { animation-delay: .24s; }
+/* 統計カードの数字 */
+.stat-v span[data-count] { font-variant-numeric: tabular-nums; }
+/* 問題カード（仕分け・CIA）の正解・不正解の反応 */
+.sort-btns .btn.right { animation: popOk .35s ease; }
+.sort-btns .btn.picked:not(.right) { animation: shake .35s ease; }
+@keyframes popOk { 50% { transform: scale(1.05); } }
+@keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+.choice.correct { animation: popOk .35s ease; }
+.choice.wrong { animation: shake .35s ease; }
+@media (prefers-reduced-motion: reduce) {
+  #chart svg rect, #chart svg text, .chapter.in > div > .card, .chapter.in > div > details.deeper, .flash, .timer.low, .fp-wrap line, .fp-wrap rect, .fp-wrap text, #rings circle, .impact-item, .sort-btns .btn, .choice { animation: none !important; }
+  .fp-wrap line { stroke-dashoffset: 0; }
+}

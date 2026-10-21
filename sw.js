@@ -1,5 +1,5 @@
 /* オフライン対応：一度開いたファイルをブラウザに保存し、ネットに繋がらないときはそれを使う（ネット優先） */
-const CACHE = "leaktrace-v0.9.0";
+const CACHE = "leaktrace-v0.9.1";
 const FILES = [
   "./", "./index.html", "./css/style.css",
   "./js/glossary.js", "./js/record.js", "./js/cases.js", "./js/map.js", "./js/stage0.js", "./js/stage1.js", "./js/stage2.js",
