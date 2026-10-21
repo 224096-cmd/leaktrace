@@ -662,3 +662,25 @@ dl.gloss dd { margin: 2px 0 0; padding-bottom: 12px; border-bottom: 1px solid va
   #chart svg rect, #chart svg text, .chapter.in > div > .card, .chapter.in > div > details.deeper, .flash, .timer.low, .fp-wrap line, .fp-wrap rect, .fp-wrap text, #rings circle, .impact-item, .sort-btns .btn, .choice { animation: none !important; }
   .fp-wrap line { stroke-dashoffset: 0; }
 }
+
+/* ---------- 段階ごとのページ（スライドで切り替わる） ---------- */
+.step-view { animation: stepIn .35s ease both; }
+@keyframes stepIn { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+.chapter-rail a.cr { text-decoration: none; }
+.cr.done .cr-n { color: var(--ok); font-weight: 700; }
+.bb-steps { display: flex; gap: 6px; }
+.bb-steps span { width: 9px; height: 9px; border-radius: 50%; background: var(--line-strong); }
+.bb-steps span.done { background: var(--ok); }
+.bb-steps span.on { width: 26px; border-radius: 99px; background: var(--accent); }
+@media (max-width: 560px) { .bb-steps { display: none; } }
+/* スタート前は操作できない（ステージ4） */
+.mailer { position: relative; }
+.mailer.gated > :not(.start-gate) { filter: blur(2px); pointer-events: none; user-select: none; }
+.start-gate { position: absolute; inset: 0; z-index: 3; display: grid; place-items: start center; padding-top: 40px; background: rgba(255,255,255,.6); border-radius: 8px; }
+.sg-box { position: sticky; top: 150px; }
+.sg-box { background: #fff; border: 1px solid var(--line-strong); border-radius: 12px; padding: 20px 24px; text-align: center; box-shadow: 0 10px 30px rgba(20,30,50,.12); }
+.sg-t { font-family: var(--serif); font-weight: 700; font-size: 1.1rem; margin-bottom: 4px; }
+@media (prefers-reduced-motion: reduce) { .step-view { animation: none; } }
+.step-inner > .card, .step-inner > details.deeper { animation: cardIn .45s ease both; }
+.step-inner > .card:nth-child(2) { animation-delay: .08s; } .step-inner > .card:nth-child(3) { animation-delay: .16s; } .step-inner > .card:nth-child(4) { animation-delay: .24s; }
+@media (prefers-reduced-motion: reduce) { .step-inner > .card, .step-inner > details.deeper { animation: none; } }

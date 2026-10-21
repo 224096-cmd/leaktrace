@@ -149,6 +149,8 @@ LT.stageShell = function (app, stage, stepKey, renderers) {
   LT.current.stage = stage.id;
   const st = LT.stageState(stage.id);
   const order = ["see", "break", "defend"];
+  stepKey = order.includes(stepKey) ? stepKey : "see";
+  const i = order.indexOf(stepKey);
   const DEF = LT.STEP_DEF.map((d, k) => Object.assign({}, d, stage.steps ? stage.steps[k] : {}));
 
   const head = document.createElement("div");
@@ -160,106 +162,54 @@ LT.stageShell = function (app, stage, stepKey, renderers) {
   const sr = head.querySelector("#stageReset");
   if (sr) sr.onclick = () => {
     if (!sr.dataset.armed) { sr.dataset.armed = "1"; sr.textContent = "もう一度押すとやり直します（回答は残ります）"; return; }
-    LT.resetProgress(stage.id); LT.toast(`${stage.title}の進み具合をリセットしました`); LT.render();
+    LT.resetProgress(stage.id); LT.toast(`${stage.title}の進み具合をリセットしました`);
+    if (stepKey === "see") LT.render(); else location.hash = `${stage.route}/see`;
   };
 
-  // 上部に貼り付く細い進行バー（①②③、スクロールで現在地が動く）
+  // 上部に貼り付く段階バー（①②③）。各段階は別ページ
   const rail = document.createElement("nav");
   rail.className = "chapter-rail";
-  rail.innerHTML = DEF.map((d, k) => `<button class="cr ${st.steps[d.key] ? "done" : ""}" data-k="${k}">
-      <span class="cr-n">${"①②③"[k]}</span><span class="cr-l">${d.label}</span></button>`).join('<span class="cr-line"></span>');
+  rail.setAttribute("aria-label", "段階");
+  rail.innerHTML = DEF.map((d, k) => `<a class="cr ${k === i ? "on" : ""} ${st.steps[d.key] ? "done" : ""}" href="${stage.route}/${d.key}">
+      <span class="cr-n">${st.steps[d.key] && k !== i ? "✓" : "①②③"[k]}</span><span class="cr-l">${d.label}</span></a>`).join('<span class="cr-line"></span>');
   app.appendChild(rail);
 
   const body = document.createElement("div");
-  body.className = "stage-body";
+  body.className = "stage-body step-view";
+  body.innerHTML = `<div class="chapter-head"><span class="ch-badge ch-${stepKey}">${"①②③"[i]} ${DEF[i].label}</span><span class="ch-hint">${DEF[i].hint}</span></div>`;
   app.appendChild(body);
-
-  // 章1の冒頭に「実際の事件」
-  if (LT.CASES[stage.id]) {
+  LT.log(stage.id, stepKey, "view");
+  if (stepKey === "see" && LT.CASES[stage.id]) {
     body.insertAdjacentHTML("beforeend", LT.caseCard(stage.id));
     const det = body.querySelector("details.case");
     det.addEventListener("toggle", () => { LT.state.ui.caseOpen = LT.state.ui.caseOpen || {}; LT.state.ui.caseOpen[stage.id] = det.open; LT.save(); });
   }
+  const inner = document.createElement("div");
+  inner.className = "step-inner";
+  body.appendChild(inner);
+  renderers[stepKey](inner);
 
-  const chapters = [];
-  order.forEach((key, k) => {
-    const sec = document.createElement("section");
-    sec.className = "chapter reveal";
-    sec.id = `ch-${key}`;
-    sec.innerHTML = `<div class="chapter-head"><span class="ch-badge ch-${key}">${"①②③"[k]} ${DEF[k].label}</span><span class="ch-hint">${DEF[k].hint}</span></div>`;
-    const inner = document.createElement("div");
-    sec.appendChild(inner);
-    body.appendChild(sec);
-    renderers[key](inner);
-    chapters.push({ key, k, sec });
-    // 章と章のあいだの「つなぎ」矢印
-    if (k < 2) body.insertAdjacentHTML("beforeend", '<div class="chapter-join" aria-hidden="true"><span>▾</span></div>');
-  });
-  LT.log(stage.id, "flow", "view");
-
-  // 進行バーのクリックで該当章へスクロール
-  const railBtns = Array.from(rail.querySelectorAll(".cr"));
-  const scrollToChapter = (k) => { chapters[k].sec.scrollIntoView({ behavior: LT.mapReduceMotion && LT.mapReduceMotion() ? "auto" : "smooth", block: "start" }); };
-  railBtns.forEach(b => b.onclick = () => scrollToChapter(Number(b.dataset.k)));
-
-  // 章が少しでも画面に入ったら表示＆その段階を完了に
-  let active = 0;
-  const io = new IntersectionObserver((ents) => {
-    ents.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.classList.add("in");
-        const ch = chapters.find(c => c.sec === e.target);
-        if (ch) { LT.markStep(stage.id, ch.key); railBtns[ch.k].classList.add("done"); }
-      }
-    });
-  }, { threshold: 0, rootMargin: "0px 0px -12% 0px" });
-  chapters.forEach(c => io.observe(c.sec));
-  chapters[0].sec.classList.add("in"); // 先頭は即表示
-  LT._stageIO = io;
-
-  // スクロールに応じて現在地（進行バー・下部ナビ）を更新
-  let active_raf = 0;
-  const onScroll = () => {
-    if (active_raf) return;
-    active_raf = requestAnimationFrame(() => {
-      active_raf = 0;
-      let cur = 0;
-      chapters.forEach((c, k) => { if (c.sec.getBoundingClientRect().top < 180) cur = k; });
-      if (cur !== active) { active = cur; railBtns.forEach((b, k) => b.classList.toggle("on", k === active)); updateBar(); }
-    });
-  };
-  window.addEventListener("scroll", onScroll, { passive: true });
-  LT._stageScroll = onScroll;
-  railBtns[0].classList.add("on");
-
-  // 画面下の固定ナビ
+  // 画面下の固定ナビ：前へ／次へ
   const nextIdx = LT.STAGES.findIndex(s => s.id === stage.id) + 1;
   const nextStage = nextIdx < LT.STAGES.length ? LT.STAGES[nextIdx] : null;
+  const prevHref = i > 0 ? `${stage.route}/${order[i - 1]}` : "#/home";
+  const prevLabel = i > 0 ? `${"①②③"[i - 1]} ${DEF[i - 1].label}` : "ホーム";
+  const nextHref = i < 2 ? `${stage.route}/${order[i + 1]}` : (nextStage ? nextStage.route : "#/map");
+  const nextLabel = i < 2 ? `${"①②③"[i + 1]} ${DEF[i + 1].label}` : (nextStage ? `次のステージ：${nextStage.title}` : "攻撃経路マップへ");
   const bar = document.getElementById("bottombar");
   bar.hidden = false;
   document.body.classList.add("has-bottombar");
-  const updateBar = () => {
-    const atLast = active >= 2;
-    const nextLabel = atLast ? (nextStage ? `次へ：${nextStage.title}` : "攻撃経路マップへ") : `次の章へ：${DEF[active + 1].label}`;
-    bar.querySelector("#nextBtn").innerHTML = `${nextLabel} ›`;
-    bar.querySelector(".bb-pos").textContent = `${LT.stageLabel(stage)}　${"①②③"[active]} ${DEF[active].label}`;
-  };
   bar.innerHTML = `
     <div class="bb-inner">
-      <a class="btn ghost" href="#/home">‹ ホーム</a>
-      <div class="bb-pos"></div>
-      <button class="btn primary" id="nextBtn"></button>
+      <a class="btn ghost" href="${prevHref}">‹ ${prevLabel}</a>
+      <div class="bb-steps">${order.map((k, n) => `<span class="${n === i ? "on" : ""}${st.steps[k] ? " done" : ""}"></span>`).join("")}</div>
+      <button class="btn primary" id="nextBtn">${nextLabel} ›</button>
     </div>`;
   bar.querySelector("#nextBtn").onclick = () => {
-    if (active < 2) { scrollToChapter(active + 1); return; }
-    chapters.forEach(c => LT.markStep(stage.id, c.key));
-    if (LT.stageState(stage.id).completedAt) LT.celebrate(stage);
-    location.hash = nextStage ? nextStage.route : "#/map";
+    LT.markStep(stage.id, stepKey);
+    if (i === 2 && LT.stageState(stage.id).completedAt) LT.celebrate(stage);
+    location.hash = nextHref;
   };
-  updateBar();
-
-  // 旧URL（/see /break /defend）で来たらその章へ
-  if (order.includes(stepKey) && stepKey !== "see") setTimeout(() => scrollToChapter(order.indexOf(stepKey)), 60);
 };
 
 /* ステージ完了のお祝い（短く） */

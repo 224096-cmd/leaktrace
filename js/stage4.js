@@ -103,13 +103,17 @@ LT.S4.break = function (el) {
     <div id="result"></div>
   </div>`;
   const form = el.querySelector("#form"), timerEl = el.querySelector("#timer");
-  let t = 25.0, done = false;
-  const timer = setInterval(() => { t -= 0.1; if (t <= 0) { t = 0; clearInterval(timer); if (!done) submit(true); } timerEl.textContent = t.toFixed(1); timerEl.classList.toggle("low", t < 8); const tb = el.querySelector("#timerBar"); if (tb) { tb.style.width = (t / 25 * 100) + "%"; tb.classList.toggle("low", t < 8); } }, 100);
-  window.addEventListener("hashchange", () => { done = true; clearInterval(timer); }, { once: true });
+  let t = 25.0, done = false, timer = null;
+  // 準備ができてから始める（スタートを押すまで時間は進まない）
+  form.insertAdjacentHTML("afterbegin", `<div class="start-gate" id="startGate"><div class="sg-box"><div class="sg-t">準備はいいですか？</div><p class="small">スタートを押すと25秒のカウントダウンが始まります。</p><button class="btn primary lg" id="startBtn">スタート</button></div></div>`);
+  form.classList.add("gated");
+  el.querySelector("#startBtn").onclick = () => { el.querySelector("#startGate").remove(); form.classList.remove("gated"); LT.log("s4", "break", "start"); startTimer(); };
+  const startTimer = () => { timer = setInterval(() => { t -= 0.1; if (t <= 0) { t = 0; clearInterval(timer); if (!done) submit(true); } timerEl.textContent = t.toFixed(1); timerEl.classList.toggle("low", t < 8); const tb = el.querySelector("#timerBar"); if (tb) { tb.style.width = (t / 25 * 100) + "%"; tb.classList.toggle("low", t < 8); } }, 100); };
+  window.addEventListener("hashchange", () => { done = true; if (timer) clearInterval(timer); }, { once: true });
   form.querySelector("#send").onclick = () => submit(false);
 
   function submit(timeout) {
-    if (done) return; done = true; clearInterval(timer);
+    if (done) return; done = true; if (timer) clearInterval(timer);
     const picks = LT.S4.recipients.map((r, i) => (form.querySelector(`input[name=r${i}]:checked`) || {}).value || "to");
     const fsel = form.querySelector("input[name=file]:checked");
     const file = fsel ? LT.S4.files[Number(fsel.value)] : null;
