@@ -1,0 +1,6 @@
+# 評価実験で集めた参加者データはリポジトリに入れない
+data/participants/
+*.csv
+!sample/*.csv
+Thumbs.db
+.DS_Store
