@@ -3,98 +3,40 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="個人情報漏えいの仕組みと対策を、攻撃と防御の体験から学ぶWeb教材">
 <title>LeakTrace（リークトレース）</title>
-<style>
-  :root { --bg:#f6f7fb; --card:#fff; --text:#1f2430; --sub:#5b6474; --accent:#2b5fd9; --ok:#1e8e3e; --ng:#c5221f; }
-  * { box-sizing: border-box; }
-  body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif; background:var(--bg); color:var(--text); line-height:1.7; }
-  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
-  h1 { font-size: 1.8rem; margin: 0 0 4px; }
-  .sub { color: var(--sub); margin: 0 0 24px; }
-  .card { background: var(--card); border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
-  h2 { font-size: 1.15rem; margin: 0 0 12px; }
-  ul { padding-left: 1.2em; margin: 0; }
-  li { margin: 6px 0; }
-  .ok { color: var(--ok); font-weight: bold; }
-  .ng { color: var(--ng); font-weight: bold; }
-  code { background:#eef1f7; padding: 1px 6px; border-radius: 4px; font-size: .9em; word-break: break-all; }
-  .note { font-size: .9rem; color: var(--sub); }
-</style>
+<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<main>
-  <h1>LeakTrace</h1>
-  <p class="sub">個人情報漏えいの仕組みと対策を、攻撃と防御の体験から学ぶWeb教材（開発中）</p>
+<header class="topbar">
+  <a href="#/home" class="brand">Leak<span>Trace</span></a>
+  <nav class="topnav" id="topnav">
+    <a href="#/home" data-nav="home">ホーム</a>
+    <a href="#/map" data-nav="map">攻撃経路マップ</a>
+    <a href="#/records" data-nav="records">学習記録</a>
+  </nav>
+  <div class="layer-pill" id="layerPill" title="学習の深さ（クリックで変更）">導入</div>
+</header>
 
-  <section class="card">
-    <h2>この教材について</h2>
-    <p>「なぜ個人情報は漏れるのか。そして、なぜその対策が効くのか」を、学習者が攻撃者と防御者の両方の立場を体験しながら確かめます。扱うデータはすべて架空で、入力した内容は外部に送信されません。</p>
-    <p class="note">三重大学 教育学部 技術・ものづくり教育コース 卒業研究</p>
-  </section>
-
-  <section class="card">
-    <h2>動作環境チェック</h2>
-    <p class="note">この端末で教材に必要なブラウザ機能が使えるかを確認します。</p>
-    <ul id="checks">
-      <li>チェック中…</li>
-    </ul>
-  </section>
-
-  <section class="card">
-    <h2>ステージ（準備中）</h2>
-    <ul>
-      <li>1 パスワード</li>
-      <li>2 フィッシング</li>
-      <li>3 侵入の連鎖</li>
-      <li>4 人為ミス</li>
-      <li>最終課題：自分の行動をふり返る</li>
-    </ul>
-  </section>
+<main id="app" class="app">
+  <div class="card">読み込み中…</div>
 </main>
 
-<script>
-(async function () {
-  const results = [];
-  const add = (label, ok, detail) => results.push({ label, ok, detail });
+<footer class="footer">
+  <p>LeakTrace — 三重大学 教育学部 技術・ものづくり教育コース 卒業研究。扱うデータはすべて架空です。入力内容は外部に送信されません。</p>
+</footer>
 
-  // WebCrypto（ブラウザ標準の暗号機能）
-  try {
-    const data = new TextEncoder().encode("leaktrace");
-    const buf = await crypto.subtle.digest("SHA-256", data);
-    const hex = [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
-    add("WebCrypto（SHA-256）", true, "SHA-256(\"leaktrace\") = " + hex.slice(0, 16) + "…");
-  } catch (e) {
-    add("WebCrypto（SHA-256）", false, String(e));
-  }
+<div id="glossaryPop" class="glossary-pop" hidden></div>
+<div id="toast" class="toast" hidden></div>
 
-  // Web Worker（重い計算を別スレッドで動かす仕組み）
-  try {
-    const src = "self.onmessage = e => self.postMessage(e.data * 2);";
-    const w = new Worker(URL.createObjectURL(new Blob([src], { type: "text/javascript" })));
-    const v = await new Promise((res, rej) => { w.onmessage = e => res(e.data); w.onerror = rej; w.postMessage(21); });
-    w.terminate();
-    add("Web Worker", v === 42, "応答 " + v);
-  } catch (e) {
-    add("Web Worker", false, String(e));
-  }
-
-  // localStorage（学習記録の保存先）
-  try {
-    localStorage.setItem("leaktrace_test", "1");
-    localStorage.removeItem("leaktrace_test");
-    add("localStorage", true, "読み書きOK");
-  } catch (e) {
-    add("localStorage", false, String(e));
-  }
-
-  // 画面サイズ
-  add("画面幅", true, window.innerWidth + " px（" + (window.innerWidth < 768 ? "スマホ/縦タブレット" : "PC/横タブレット") + "想定で表示）");
-
-  const ul = document.getElementById("checks");
-  ul.innerHTML = results.map(r =>
-    `<li><span class="${r.ok ? "ok" : "ng"}">${r.ok ? "OK" : "NG"}</span> ${r.label} <code>${r.detail}</code></li>`
-  ).join("");
-})();
-</script>
+<script src="js/glossary.js"></script>
+<script src="js/record.js"></script>
+<script src="js/map.js"></script>
+<script src="js/stage1.js"></script>
+<script src="js/stage2.js"></script>
+<script src="js/stage3.js"></script>
+<script src="js/stage4.js"></script>
+<script src="js/final.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>
