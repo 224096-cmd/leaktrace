@@ -314,7 +314,6 @@ LT.routes.home = function (app) {
   <div class="link-list">
     <a href="#/map"><b>攻撃経路マップ</b><span>通った経路が1枚の図に描き足されていきます（${LT.state.map.edges.length} / ${LT.MAP.edges.length}）</span></a>
     <a href="#/glossary"><b>用語集</b><span>出てきた言葉の意味</span></a>
-    <a href="#/guide"><b>授業での使い方</b><span>先生向け：対象・時間配分・注意点</span></a>
     <a href="#/records"><b>学習記録</b><span>進み具合や回答を CSV / JSON / Markdown で書き出す</span></a>
   </div>
 
@@ -362,32 +361,8 @@ LT.routes.glossary = function (app) {
   draw("");
 };
 
-/* ---------- 授業での使い方（先生向け） ---------- */
-LT.routes.guide = function (app) {
-  app.innerHTML = `<h1>授業での使い方</h1>
-  <div class="card"><h2>対象と関連する学習内容</h2>
-    <p>中学生から大学生まで、同じ画面で学べるように作っています。基本の説明は中学生にも分かる言葉で書き、専門的な内容は「🔎 もっと深く」を開くと読めるようにしています。</p>
-    <div class="table-wrap"><table><tr><th>対象</th><th>関連する学習内容</th><th>使い方の例</th></tr>
-      <tr><td>中学生</td><td>技術・家庭（技術分野）「D 情報の技術」：情報セキュリティ、情報モラル</td><td>各ステージの体験と「見る」を中心に</td></tr>
-      <tr><td>高校生</td><td>情報Ⅰ「(1) 情報社会の問題解決」：個人情報の保護、情報セキュリティ、関係する法規</td><td>体験に加えて、記述課題で根拠を説明させる</td></tr>
-      <tr><td>大学生</td><td>情報倫理、情報セキュリティ概論（教養科目など）</td><td>「もっと深く」と、ステージ3の対策設計を議論に使う</td></tr></table></div></div>
-  <div class="card"><h2>時間配分の例（50分×2回）</h2>
-    <div class="table-wrap"><table><tr><th>回</th><th>内容</th><th>目安</th></tr>
-      <tr><td rowspan="4">1回目</td><td>導入「漏えいはなぜ起きる？」</td><td>10分</td></tr>
-      <tr><td>（研究で使う場合は、最初に「はじめのテスト」10分）</td><td>—</td></tr>
-      <tr><td>ステージ1 不正ログイン</td><td>12分</td></tr>
-      <tr><td>ステージ2 フィッシング</td><td>15分（ステージ1は「見る」「破る」まででも可）</td></tr>
-      <tr><td rowspan="4">2回目</td><td>ステージ3 ランサムウェア</td><td>12分</td></tr>
-      <tr><td>ステージ4 人為ミス</td><td>12分</td></tr>
-      <tr><td>まとめ「漏えいの後に」</td><td>8分</td></tr>
-      <tr><td>攻撃経路マップでふり返り（研究で使う場合は、おわりのテスト・アンケート）</td><td>10〜15分</td></tr></table></div>
-    <p class="small mt">1回（50分）で行う場合は、導入とステージ2・4を中心にし、ほかは「見る」だけにする方法があります。</p></div>
-  <div class="card"><h2>準備と注意</h2><ul>
-    <li>端末：タブレットまたはPCのブラウザ。一度開けば、授業中にネットが切れても動きます。</li>
-    <li>はじめに「はじめに：守るために学ぶ」の画面で、不正アクセス禁止法と、教材の外で試さないことを確認させてください。</li>
-    <li>記録は各端末に保存されます。授業の最後に「学習記録」から書き出して回収してください（端末を共有する場合は書き出し後に消去）。</li>
-    <li>実験で使う場合は、「学習記録」→「実験の設定」で参加者IDを設定してください。</li></ul></div>`;
-};
+/* 授業での使い方のページは廃止（古いリンクはホームへ） */
+LT.routes.guide = function () { location.hash = "#/home"; };
 
 /* ---------- 倫理と法律の説明 ---------- */
 LT.routes.ethics = function (app) {

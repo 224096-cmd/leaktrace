@@ -2,7 +2,7 @@
 window.LT = window.LT || {};
 
 LT.STORE_KEY = "leaktrace_v1";
-LT.VERSION = "0.6.1";
+LT.VERSION = "0.7.0";
 
 LT.defaultState = function () {
   return {

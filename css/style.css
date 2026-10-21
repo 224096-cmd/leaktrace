@@ -437,3 +437,29 @@ dl.gloss dd { margin: 2px 0 0; padding-bottom: 12px; border-bottom: 1px solid va
 .reset-opt .btn { width: 100%; }
 .btn[data-armed] { background: var(--ng); color: #fff; border-color: var(--ng); }
 @media (max-width: 560px) { .reset-opt { grid-template-columns: 1fr; gap: 6px; } }
+
+/* ---------- 攻撃経路マップ ---------- */
+.seg { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; background: #fff; padding: 7px 14px; font: inherit; font-size: .86rem; color: var(--sub); cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line-strong); }
+.seg button.on { background: var(--accent); color: #fff; font-weight: 700; }
+.edge-draw { stroke-dasharray: 100; stroke-dashoffset: 100; animation: edgeDraw .8s ease forwards; }
+@keyframes edgeDraw { to { stroke-dashoffset: 0; } }
+.cut-pop { opacity: 0; animation: cutPop .4s ease forwards; }
+@keyframes cutPop { to { opacity: 1; } }
+.node-danger rect { animation: danger 1.6s ease-in-out infinite; }
+@keyframes danger { 50% { stroke-opacity: .25; } }
+.map-caption { margin-top: 12px; padding: 12px 16px; border: 1px solid var(--accent-line); background: #f4f7fd; border-radius: 8px; animation: fadein .25s ease; }
+.map-key { display: grid; gap: 8px; }
+.map-key > div { display: grid; grid-template-columns: 64px 1fr; gap: 10px; align-items: start; font-size: .92rem; }
+.map-key svg { margin-top: 6px; }
+@media (prefers-reduced-motion: reduce) { .edge-draw { stroke-dashoffset: 0; } .cut-pop { opacity: 1; } }
+
+.edge-list { list-style: none; padding: 0; margin: 14px 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+@media (max-width: 720px) { .edge-list { grid-template-columns: 1fr; } }
+.edge-list li { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: start; padding: 8px 6px; border-top: 1px solid var(--line); cursor: pointer; margin: 0; }
+.edge-list li:hover, .edge-list li.on { background: var(--accent-soft); }
+.edge-list .en { width: 24px; height: 24px; border-radius: 50%; border: 2px solid; display: grid; place-items: center; font-size: .74rem; font-weight: 700; margin-top: 2px; }
+.edge-list .et { display: flex; flex-direction: column; line-height: 1.5; font-size: .9rem; }
+.edge-list .et small { font-size: .78rem; }
+.edge-list .badge { margin-top: 2px; }
