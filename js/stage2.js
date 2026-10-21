@@ -243,36 +243,75 @@ LT.S2.see = function (el) {
 
 /* 中継型フィッシングの図（概念）。3つの列：あなた／偽サイト／本物のサイト */
 LT.S2.RELAY = [
-  { from: 0, to: 0, t: "「口座で不審な取引を検知。至急確認を」というSMSが届く", who: "you" },
-  { from: 0, to: 1, t: "リンクを開き、偽サイトでIDとパスワードを入力", who: "you" },
-  { from: 1, to: 2, t: "偽サイトが、入力された内容をすぐに本物のサイトへ入力", who: "fake" },
-  { from: 2, to: 0, t: "本物のサイトが、あなたのスマホに確認コードを送る", who: "real" },
-  { from: 0, to: 1, t: "あなたは確認コードも偽サイトに入力してしまう", who: "you" },
-  { from: 1, to: 2, t: "偽サイトがコードを中継 → 攻撃者のログインが成立", who: "fake", bad: true }
+  { from: 1, to: 0, t: "「口座で不審な取引を検知。至急確認を」というSMSが届く", label: "偽SMS" },
+  { from: 0, to: 1, t: "リンクを開き、偽サイトでIDとパスワードを入力", label: "ID・パスワード" },
+  { from: 1, to: 2, t: "偽サイトが、入力された内容をすぐに本物のサイトへ入力", label: "ID・パスワード" },
+  { from: 2, to: 0, t: "本物のサイトが、あなたのスマホに確認コードを送る", label: "確認コード" },
+  { from: 0, to: 1, t: "あなたは確認コードも偽サイトに入力してしまう", label: "確認コード" },
+  { from: 1, to: 2, t: "偽サイトがコードを中継 → 攻撃者のログインが成立", label: "確認コード", bad: true }
 ];
+LT.S2.ACTORS = [{ icon: "📱", t: "あなた" }, { icon: "🎭", t: "偽サイト" }, { icon: "🏦", t: "本物のサイト" }];
 LT.S2.relay = function (el) {
   const box = document.createElement("div");
   box.className = "card";
   box.innerHTML = `<h2>確認コードがあっても、なぜ乗っ取られたのか</h2>
-    <p>2025年の証券口座乗っ取りでは、${LT.T("ワンタイムパスワード")}（確認コード）を使っていても被害が出ました。偽サイトが、入力された内容をその場で本物のサイトへ送り込む${LT.T("中継型フィッシング")}だったからです。</p>
-    <div class="relay"><div class="relay-cols"><div>📱 あなた</div><div>🎭 偽サイト</div><div>🏦 本物のサイト</div></div><div id="relaySteps"></div></div>
-    <div class="row mt"><button class="btn primary" id="rNext">▶ 1つ進める</button><button class="btn ghost sm" id="rReset">最初から</button></div>
+    <p>2025年の証券口座乗っ取りでは、${LT.T("ワンタイムパスワード")}（確認コード）を使っていても被害が出ました。偽サイトが、入力された内容をその場で本物のサイトへ送り込む${LT.T("中継型フィッシング")}だったからです。「▶ 再生」で、情報がどう流れるか見てみましょう。</p>
+    <div class="relay2">
+      <div class="relay-stage" id="rStage">
+        ${LT.S2.ACTORS.map((a, i) => `<div class="actor" id="actor${i}"><div class="actor-ic">${a.icon}</div><div class="actor-t">${a.t}</div></div>`).join("")}
+        <div class="relay-packet" id="packet" hidden></div>
+      </div>
+      <div class="relay-caption" id="rCap">「▶ 再生」を押すと始まります。</div>
+      <div class="relay-track" id="rTrack"></div>
+    </div>
+    <div class="row mt"><button class="btn primary sm" id="rPlay">▶ 再生</button><button class="btn sm" id="rStep">1つ進める</button><button class="btn ghost sm" id="rReset">最初へ</button></div>
     <div id="relayEnd"></div>`;
   el.appendChild(box);
-  let n = 0;
-  const draw = () => {
-    box.querySelector("#relaySteps").innerHTML = LT.S2.RELAY.slice(0, n).map((r, i) => {
-      const l = Math.min(r.from, r.to), w = Math.abs(r.to - r.from);
-      return `<div class="relay-row fade-in"><span class="relay-no">${i + 1}</span><div class="relay-lane">
-        ${w ? `<div class="relay-arrow ${r.bad ? "bad" : ""} ${r.to < r.from ? "rev" : ""}" style="left:${l * 33.3 + 16.6}%;width:${w * 33.3}%"></div>` : `<div class="relay-dot" style="left:${r.from * 33.3 + 16.6}%"></div>`}
-        </div><div class="relay-t ${r.bad ? "bad" : ""}">${r.t}</div></div>`;
-    }).join("");
-    box.querySelector("#rNext").disabled = n >= LT.S2.RELAY.length;
-    box.querySelector("#relayEnd").innerHTML = n >= LT.S2.RELAY.length ? `<div class="feedback ng mt fade-in"><b>ポイント：</b>確認コードは「本物のサイトかどうか」を確かめてくれません。だから、偽サイトに入力すると、コードごと使われてしまいます。どうすれば防げるかは「なぜ守れるか」で確かめます。</div>` : "";
+  const R = LT.S2.RELAY, packet = box.querySelector("#packet"), cap = box.querySelector("#rCap"), track = box.querySelector("#rTrack");
+  let n = -1, timer = null;
+  const actorEl = (i) => box.querySelector("#actor" + i);
+  const centerPct = (i) => [16.6, 50, 83.3][i];
+  function light(i) { [0, 1, 2].forEach(k => actorEl(k).classList.toggle("on", k === i)); }
+  function movePacket(r, cb) {
+    const from = centerPct(r.from), to = centerPct(r.to);
+    packet.hidden = false; packet.textContent = r.label || "情報";
+    packet.classList.toggle("bad", !!r.bad);
+    packet.style.transition = "none"; packet.style.left = from + "%"; packet.style.top = "50%";
+    light(r.from);
+    requestAnimationFrame(() => {
+      const dur = LT.mapReduceMotion() ? 0 : 900;
+      packet.style.transition = `left ${dur}ms ease, top ${dur}ms ease`;
+      packet.style.left = to + "%";
+      setTimeout(() => { light(r.to); if (cb) cb(); }, dur + 30);
+    });
+  }
+  function showStep(i) {
+    const r = R[i];
+    cap.className = "relay-caption" + (r.bad ? " bad" : "");
+    cap.innerHTML = `<span class="relay-no">${i + 1}</span>${r.t}`;
+    track.innerHTML = R.slice(0, i + 1).map((x, k) => `<div class="rt-dot ${x.bad ? "bad" : ""} ${k === i ? "on" : ""}"></div>`).join("");
+    movePacket(r, () => { if (i === R.length - 1) finish(); });
+  }
+  function finish() {
+    box.querySelector("#relayEnd").innerHTML = `<div class="feedback ng mt fade-in mb0"><b>ポイント：</b>確認コードは「本物のサイトかどうか」を確かめてくれません。だから、偽サイトに入力すると、コードごと使われてしまいます。どうすれば防げるかは、このすぐ下で確かめます。</div>`;
+    LT.log("s2", "see", "relay_done");
+  }
+  function stop() { if (timer) { clearInterval(timer); timer = null; } box.querySelector("#rPlay").textContent = "▶ 再生"; }
+  function step() {
+    if (n >= R.length - 1) { stop(); return; }
+    n++; showStep(n);
+    if (n >= R.length - 1) stop();
+  }
+  box.querySelector("#rPlay").onclick = () => {
+    if (timer) { stop(); return; }
+    if (n >= R.length - 1) { n = -1; box.querySelector("#relayEnd").innerHTML = ""; }
+    box.querySelector("#rPlay").textContent = "■ 一時停止";
+    step();
+    timer = setInterval(step, LT.mapReduceMotion() ? 600 : 1500);
   };
-  box.querySelector("#rNext").onclick = () => { n++; draw(); if (n === LT.S2.RELAY.length) LT.log("s2", "see", "relay_done"); };
-  box.querySelector("#rReset").onclick = () => { n = 0; draw(); };
-  draw();
+  box.querySelector("#rStep").onclick = () => { stop(); step(); };
+  box.querySelector("#rReset").onclick = () => { stop(); n = -1; packet.hidden = true; light(-1); cap.textContent = "「▶ 再生」を押すと始まります。"; cap.className = "relay-caption"; track.innerHTML = ""; box.querySelector("#relayEnd").innerHTML = ""; };
+  window.addEventListener("hashchange", stop, { once: true });
 };
 
 /* ---------- ② 破る ---------- */

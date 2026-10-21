@@ -1,18 +1,19 @@
-/* ステージ3 ランサムウェア：委託先から全社停止まで（アスクル・アサヒ・イセトーの事件の型） */
+/* ステージ3 ランサムウェア：委託先から全社停止まで（アスクル・アサヒ・イセトーの事件の型）。
+   攻撃の手口の解説ではなく、「防御側の監視画面」から、事故がどう広がり、どの対策で止まるかを見る教材。 */
 window.LT = window.LT || {};
 LT.routes = LT.routes || {};
 LT.STAGE_IMPL = LT.STAGE_IMPL || {};
 
 LT.S3 = {
   entries: {
-    vendor: { icon: "🪪", title: "委託先のアカウントでログイン", desc: "システムの保守を任せている委託先の管理者IDとパスワードを盗み、社外からの入口にログインする。この1つだけ、多要素認証が「例外」で設定されていなかった。", cutBy: "mfa", cutMsg: "例外なく多要素認証を設定していれば、IDとパスワードだけでは入れない。", edges: ["vendor", "vpn"] },
-    vpn: { icon: "🚪", title: "古い機器の弱点から侵入", desc: "社外から社内につなぐための機器（VPN機器）に、公表済みの弱点が残っていた。更新（パッチ）が後回しにされていた。", cutBy: "patch", cutMsg: "機器を更新していれば、この弱点はふさがっている。", edges: ["vpnhole"] }
+    vendor: { icon: "🪪", title: "委託先のアカウントでログイン", desc: "システムの保守を任せている委託先のアカウントが悪用され、社外からの入口にログインされた。この1つだけ、多要素認証が「例外」で設定されていなかった。", cutBy: "mfa", cutMsg: "例外なく多要素認証を設定していれば、IDとパスワードだけでは入れない。", edges: ["vendor", "vpn"] },
+    vpn: { icon: "🚪", title: "古い機器の弱点を悪用", desc: "社外から社内につなぐ機器（VPN機器）に、公表済みの弱点が残っていた。更新（パッチ）が後回しにされていた。", cutBy: "patch", cutMsg: "機器を更新していれば、この弱点はふさがっている。", edges: ["vpnhole"] }
   },
   chain: [
-    { id: "lateral", icon: "🧭", title: "社内を探索し、対策ソフトを止める", desc: "入った1台から、ほかのサーバーを探して回る。監視のための対策ソフトも止めてしまう。", cutBy: "segment", cutMsg: "ネットワークが分けられていれば、入った場所からほかのサーバーが見えず、先へ進めない。", edge: "lateral" },
-    { id: "priv", icon: "🔑", title: "管理者の権限を奪う", desc: "弱い設定のアカウントを足がかりに、すべてのサーバーを操作できる権限を手に入れる。", cutBy: "least", cutMsg: "最小権限で、強い権限を持つアカウントが限られていれば、奪える権限が小さい。", edge: "priv" },
-    { id: "steal", icon: "📤", title: "顧客データを盗み出す", desc: "顧客データベースから、数十万件の個人情報を社外へ送り出す。", cutBy: "monitor", cutMsg: "ログを監視していれば、深夜の大量送信に気づいて通信を止められる。", edge: "dbget", leak: true },
-    { id: "encrypt", icon: "🔒", title: "バックアップを消し、すべてを暗号化", desc: "バックアップを先に削除してから、社内のデータを一斉に暗号化して使えなくする。そして「データを公開されたくなければ支払え」と脅す（二重恐喝）。", cutBy: "offline", cutMsg: "ネットワークから切り離したバックアップがあれば、消されずに残り、データを戻せる。", edge: "exfil", stop: true }
+    { id: "lateral", icon: "🧭", title: "社内に広がる", desc: "入口の1台から、社内のほかのサーバーへ次々とつながりが広がる。監視ソフトも無効にされる。", cutBy: "segment", cutMsg: "ネットワークが分けられていれば、入った場所からほかのサーバーが見えず、広がらない。", edge: "lateral" },
+    { id: "priv", icon: "🔑", title: "強い権限が奪われる", desc: "弱い設定のアカウントから、すべてのサーバーを操作できる管理者の権限が奪われる。", cutBy: "least", cutMsg: "最小権限で、強い権限を持つアカウントが限られていれば、奪われても影響が小さい。", edge: "priv" },
+    { id: "steal", icon: "📤", title: "顧客データが社外へ出る", desc: "顧客データベースの数十万件分が、社外へ送り出される。", cutBy: "monitor", cutMsg: "ログを監視していれば、深夜の大量通信に気づいて止められる。", edge: "dbget", leak: true },
+    { id: "encrypt", icon: "🔒", title: "暗号化され、使えなくなる", desc: "バックアップが消されたうえで、社内のデータが暗号化されて開けなくなる。そして「公開されたくなければ支払え」と脅される（二重恐喝）。", cutBy: "offline", cutMsg: "ネットワークから切り離したバックアップがあれば、消されずに残り、データを戻せる。", edge: "exfil", stop: true }
   ],
   defenses: {
     mfa: { label: "全アカウントに多要素認証（例外なし）", short: "多要素認証", icon: "📱" },
@@ -21,31 +22,40 @@ LT.S3 = {
     least: { label: "権限を必要最小限に", short: "最小権限", icon: "🗝️" },
     monitor: { label: "ログを監視する", short: "監視", icon: "👀" },
     offline: { label: "切り離したバックアップ", short: "バックアップ", icon: "💾" }
+  },
+  /* 監視画面の再現で使う社内ネットワーク図 */
+  net: {
+    nodes: {
+      att:    { x: 60,  y: 150, label: "社外", kind: "ext" },
+      vpn:    { x: 215, y: 150, label: "入口の機器", kind: "sys" },
+      pc1:    { x: 370, y: 70,  label: "業務PC", kind: "pc" },
+      pc2:    { x: 370, y: 150, label: "業務PC", kind: "pc" },
+      edr:    { x: 370, y: 232, label: "監視ソフト", kind: "guard" },
+      fs:     { x: 545, y: 70,  label: "ファイル\nサーバー", kind: "data" },
+      db:     { x: 545, y: 150, label: "顧客DB\n74万件", kind: "data" },
+      bk:     { x: 545, y: 232, label: "バック\nアップ", kind: "backup" }
+    },
+    links: [["att","vpn"],["vpn","pc1"],["vpn","pc2"],["pc1","fs"],["pc2","db"],["pc2","edr"],["fs","bk"],["db","bk"]],
+    /* 段階ごとに「汚染された」ノードと監視ログの行 */
+    steps: [
+      { key: "entry",   t: "02:13", nodes: ["att","vpn"],    log: "社外から入口の機器へログイン成功（委託先のアカウント）", level: "warn" },
+      { key: "lateral", t: "02:41", nodes: ["pc1","pc2"],    log: "入口から複数の業務PCへ接続が拡大", level: "warn", kill: "edr" },
+      { key: "priv",    t: "03:20", nodes: [],               log: "管理者権限の使用を検知（通常はない時間帯）", level: "warn" },
+      { key: "steal",   t: "03:55", nodes: ["db"],           log: "顧客DBから社外へ 約74万件・38GBの送信", level: "bad", flag: "db" },
+      { key: "encrypt", t: "04:30", nodes: ["fs","db","bk"], log: "バックアップ削除後、全サーバーのファイルを暗号化", level: "bad", flag: "all" }
+    ]
   }
 };
 
-/* ① 見る：連鎖の全体像 */
+/* ① 見る：監視画面から見た「事故の2時間」 */
 LT.S3.see = function (el) {
   el.innerHTML = `<div class="card">
     <h2>1つのアカウントから、会社全体が止まるまで</h2>
-    <p>${LT.T("ランサムウェア")}の攻撃は1回では終わりません。入口から入り、社内で足場を広げ、データを盗んだうえで、${LT.T("バックアップ")}まで消して暗号化します。最近は、本体の会社ではなく${LT.T("委託先")}が入口になる例が増えています（${LT.T("サプライチェーン攻撃")}）。</p>
-    <button class="btn primary" id="play">▶ 連鎖を再生</button>
-    <div id="chain" class="mt"></div>
-    <div id="impact"></div>
+    <p>${LT.T("ランサムウェア")}の被害は1回では終わりません。最近は、本体の会社ではなく${LT.T("委託先")}が入口になる例が増えています（${LT.T("サプライチェーン攻撃")}）。ここでは、架空の会社「ソラ商事」の<b>情報システム担当が見ていた監視画面</b>で、事故がどう広がったかを再現します。</p>
+    <div class="replay" id="replay"></div>
   </div>`;
-  const steps = [LT.S3.entries.vendor].concat(LT.S3.chain);
-  const chain = el.querySelector("#chain");
-  const draw = (active) => {
-    chain.innerHTML = steps.map((c, i) => `<div class="chain-step ${i <= active ? "hit" : ""}">
-      <span class="chain-icon">${c.icon}</span><div class="grow"><b>${i + 1}. ${c.title}</b>${LT.isIntro() ? "" : `<div class="small">${c.desc}</div>`}</div>${i <= active ? '<span class="badge attack">突破</span>' : ""}</div>`).join('<div class="chain-arrow">↓</div>');
-  };
-  draw(-1);
-  el.querySelector("#play").onclick = async () => {
-    el.querySelector("#play").disabled = true;
-    for (let i = 0; i < steps.length; i++) { draw(i); await LT.sleep(650); }
-    el.querySelector("#impact").innerHTML = LT.S3.impactHTML({ leak: true, stop: true, recover: false });
-    el.querySelector("#play").disabled = false;
-  };
+  LT.S3.replay(el.querySelector("#replay"));
+
   LT.prediction(el, "s3.see.pred", "この連鎖を止めるには、どうするのが効果的だと思う？",
     [{ text: "最後の「暗号化」だけを全力で防ぐ" }, { text: "連鎖のどこか1か所でも断ち切れれば、その先には進めない", correct: true }, { text: "完全に防ぐのは不可能なので、身代金を用意しておく" }],
     "対策は「連鎖のどこかを断ち切るもの」です。手前で止めるほど被害は小さくなります。ただし1か所だけに頼ると、そこが破られたときに全部進まれてしまうため、いくつかを重ねます（多層防御）。");
@@ -57,6 +67,99 @@ LT.S3.see = function (el) {
     <p class="mb0">また、アスクルは攻撃者と接触せず、身代金の支払いなどの交渉もしていないと発表しました。支払っても、データが戻る保証や、盗まれたデータが公開されない保証はないためです。</p>`));
 };
 
+/* 監視画面の再現：ネットワーク図＋監視ログの表＋被害メーターが連動して進む */
+LT.S3.replay = function (box) {
+  const N = LT.S3.net, steps = N.steps;
+  let idx = -1, timer = null;
+  box.innerHTML = `
+    <div class="replay-head">
+      <div class="replay-clock"><span class="rc-dot"></span><span id="rpClock">02:00</span><span class="small">ソラ商事 監視センター</span></div>
+      <div class="replay-ctrl"><button class="btn primary sm" id="rpPlay">▶ 再生</button><button class="btn sm" id="rpStep">1ステップ進む</button><button class="btn ghost sm" id="rpReset">最初へ</button></div>
+    </div>
+    <div class="replay-grid">
+      <div class="replay-net"><div class="rp-label">社内ネットワーク</div><svg viewBox="0 0 620 300" class="chart" id="rpNet" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,sans-serif"></svg></div>
+      <div class="replay-side">
+        <div class="rp-label">監視ログ</div>
+        <div class="replay-log" id="rpLog"><div class="rl-empty">再生すると、記録が1行ずつ流れます。</div></div>
+        <div class="rp-label mt">被害の広がり</div>
+        <div class="replay-meters" id="rpMeters"></div>
+      </div>
+    </div>
+    <div id="rpResult"></div>`;
+
+  const clock = box.querySelector("#rpClock"), logEl = box.querySelector("#rpLog");
+  const hit = new Set();
+
+  function drawNet() {
+    let g = "";
+    N.links.forEach(([a, b]) => {
+      const p = N.nodes[a], q = N.nodes[b];
+      const on = hit.has(a) && hit.has(b);
+      g += `<line x1="${p.x}" y1="${p.y}" x2="${q.x}" y2="${q.y}" stroke="${on ? "#b83a32" : "#d7dce5"}" stroke-width="${on ? 3 : 1.5}" ${on ? "" : 'stroke-dasharray="3 4"'}/>`;
+      if (on) g += `<circle r="4" fill="#b83a32"><animateMotion dur="1.1s" repeatCount="indefinite" path="M${p.x},${p.y} L${q.x},${q.y}"/></circle>`;
+    });
+    Object.keys(N.nodes).forEach(k => {
+      const n = N.nodes[k], on = hit.has(k);
+      const killed = k === "edr" && idx >= 1;
+      const base = { ext: "#eef0f4", sys: "#fff", pc: "#fff", guard: "#edf6f0", data: "#f4f7fd", backup: "#fbf5e9" }[n.kind];
+      const bstroke = { ext: "#a0a8b5", sys: "#9aa6b8", pc: "#9aa6b8", guard: "#2b7a47", data: "#2c5ec9", backup: "#8a5a00" }[n.kind];
+      const fill = on ? "#fbe9e7" : base, stroke = on ? "#b83a32" : bstroke;
+      const lines = n.label.split("\n");
+      g += `<g class="${on ? "rp-node-hit" : ""}"><rect x="${n.x - 46}" y="${n.y - 24}" width="92" height="48" rx="8" fill="${fill}" stroke="${stroke}" stroke-width="${on ? 2.5 : 1.5}"/>`;
+      lines.forEach((t, i) => g += `<text x="${n.x}" y="${n.y + (i - (lines.length - 1) / 2) * 13 + 4}" font-size="11" font-weight="600" text-anchor="middle" fill="${killed ? "#b0b8c6" : "#1d2433"}" ${killed ? 'text-decoration="line-through"' : ""}>${t}</text>`);
+      if (killed) g += `<text x="${n.x}" y="${n.y - 30}" font-size="9" text-anchor="middle" fill="#b83a32">停止させられた</text>`;
+      g += `</g>`;
+    });
+    box.querySelector("#rpNet").innerHTML = g;
+  }
+  function drawMeters() {
+    const leaked = idx >= 3, enc = idx >= 4;
+    const pcs = Math.min(idx + 1, 2) >= 2 || idx >= 1 ? (idx >= 1 ? 2 : 0) : 0;
+    const m = [
+      { k: "侵入された範囲", v: idx < 0 ? "なし" : idx === 0 ? "入口のみ" : "社内全体", bad: idx >= 1, pct: idx < 0 ? 0 : idx === 0 ? 25 : 100 },
+      { k: "社外に出た個人情報", v: leaked ? "約74万件" : "0件", bad: leaked, pct: leaked ? 100 : 0 },
+      { k: "使えなくなったシステム", v: enc ? "全サーバー" : "なし", bad: enc, pct: enc ? 100 : 0 }
+    ];
+    box.querySelector("#rpMeters").innerHTML = m.map(x => `<div class="rp-meter"><div class="rpm-top"><span>${x.k}</span><b class="${x.bad ? "ng" : ""}">${x.v}</b></div><div class="rpm-bar"><div style="width:${x.pct}%;background:${x.bad ? "#b83a32" : "#2b7a47"}"></div></div></div>`).join("");
+  }
+  function render() {
+    clock.textContent = idx < 0 ? "02:00" : steps[idx].t;
+    drawNet(); drawMeters();
+    if (idx < 0) { logEl.innerHTML = `<div class="rl-empty">再生すると、記録が1行ずつ流れます。</div>`; }
+    box.querySelector("#rpResult").innerHTML = idx >= steps.length - 1 ? LT.S3.impactHTML({ leak: true, stop: true, recover: false }) + `<div class="feedback ng mb0 mt">入口の1アカウントから、約2時間で会社全体が止まりました。次の「②破る」「③なぜ守れるか」で、どこで断ち切れるかを自分で確かめます。</div>` : "";
+  }
+  function pushLog(s) {
+    const q = logEl.querySelector(".rl-empty"); if (q) q.remove();
+    const row = document.createElement("div");
+    row.className = "rl-row rl-" + s.level;
+    row.innerHTML = `<span class="rl-t">${s.t}</span><span class="rl-lv">${s.level === "bad" ? "重大" : "警告"}</span><span class="rl-msg">${s.log}</span>`;
+    logEl.appendChild(row); logEl.scrollTop = logEl.scrollHeight;
+  }
+  function advance() {
+    if (idx >= steps.length - 1) { stop(); return; }
+    idx++;
+    const s = steps[idx];
+    s.nodes.forEach(n => hit.add(n));
+    if (idx === 0) hit.add("att").add("vpn");
+    pushLog(s);
+    render();
+    LT.log("s3", "see", "replay_step", s.key);
+    if (idx === steps.length - 1) { LT.addMapEdge("exfil"); ["vendor","vpn","lateral","priv","dbget"].forEach(LT.addMapEdge); stop(); }
+  }
+  function stop() { if (timer) { clearInterval(timer); timer = null; } box.querySelector("#rpPlay").textContent = "▶ 再生"; }
+  box.querySelector("#rpPlay").onclick = () => {
+    if (timer) { stop(); return; }
+    if (idx >= steps.length - 1) { idx = -1; hit.clear(); render(); }
+    box.querySelector("#rpPlay").textContent = "■ 一時停止";
+    advance();
+    timer = setInterval(advance, LT.mapReduceMotion() ? 700 : 1800);
+  };
+  box.querySelector("#rpStep").onclick = () => { stop(); advance(); };
+  box.querySelector("#rpReset").onclick = () => { stop(); idx = -1; hit.clear(); render(); };
+  window.addEventListener("hashchange", stop, { once: true });
+  render();
+};
+
 /* 被害の表示 */
 LT.S3.impactHTML = function (r) {
   return `<div class="impact fade-in">
@@ -64,44 +167,54 @@ LT.S3.impactHTML = function (r) {
     <div class="impact-item ${r.stop ? (r.recover ? "warn" : "bad") : "good"}"><span>🚚</span><div><b>商品の出荷</b><br>${r.stop ? (r.recover ? "数日止まるが、バックアップから復旧" : "長期間の全面停止") : "通常どおり"}</div></div>
     <div class="impact-item ${r.stop || r.leak ? "bad" : "good"}"><span>💴</span><div><b>会社の損失</b><br>${r.stop && !r.recover ? "数十億円規模" : r.leak || r.stop ? "調査・おわび・復旧の費用" : "小さい"}</div></div>
   </div>
-  ${r.leak || r.stop ? `<p class="small mt">損なわれたもの：${r.leak ? `${LT.T("機密性")}（情報が漏れた）` : ""}${r.leak && r.stop ? "と" : ""}${r.stop ? `${LT.T("可用性")}（システムが使えない）` : ""}</p>` : ""}`;
+  ${r.leak || r.stop ? `<p class="small mt mb0">損なわれたもの：${r.leak ? `${LT.T("機密性")}（情報が漏れた）` : ""}${r.leak && r.stop ? "と" : ""}${r.stop ? `${LT.T("可用性")}（システムが使えない）` : ""}</p>` : ""}`;
 };
 
-/* ② 破る：攻撃者として連鎖をたどる */
+/* ② 破る：防御側の視点で、対策なしだとどこまで進むかを1段ずつ確認 */
 LT.S3.break = function (el) {
   el.innerHTML = `<div class="card attack">
-    <h2><span class="badge attack">攻撃者</span> 架空の通販会社「ソラ商事」をねらう</h2>
-    <p>まず入口を選びます。どちらも実際の事件で使われた「型」です。今のソラ商事には、どの対策も入っていません。</p>
+    <h2><span class="badge attack">攻撃者の視点</span> 対策が何もないと、どこまで進むか</h2>
+    <p>入口を選んで、「次へ」で1段ずつ進めてみましょう。今のソラ商事には、どの対策も入っていません。右側の監視ログが、その都度どう変わるかを見てください。</p>
     <div class="grid2" id="entry">${Object.keys(LT.S3.entries).map(k => { const e = LT.S3.entries[k]; return `<button class="choice-card" data-e="${k}"><span class="chain-icon">${e.icon}</span><b>${e.title}</b><span class="small">${e.desc}</span></button>`; }).join("")}</div>
-    <div id="steps" class="mt"></div>
-    <div class="xray mt" id="xray" hidden></div>
+    <div class="replay-grid mt" id="brk" hidden>
+      <div id="steps"></div>
+      <div class="replay-side"><div class="rp-label">監視ログ</div><div class="replay-log" id="xray"><div class="rl-empty">入口を選ぶと記録が始まります。</div></div></div>
+    </div>
     <div id="done"></div>
   </div>`;
   const stepsEl = el.querySelector("#steps"), xray = el.querySelector("#xray");
   let entry = null, reached = 0;
-  const log = [];
+  const logs = [];
+  const pushLog = (t, msg, level) => {
+    logs.push({ t, msg, level });
+    const q = xray.querySelector(".rl-empty"); if (q) q.remove();
+    const row = document.createElement("div");
+    row.className = "rl-row rl-" + level;
+    row.innerHTML = `<span class="rl-t">${t}</span><span class="rl-lv">${level === "bad" ? "重大" : "警告"}</span><span class="rl-msg">${msg}</span>`;
+    xray.appendChild(row); xray.scrollTop = xray.scrollHeight;
+  };
   el.querySelectorAll("[data-e]").forEach(b => b.onclick = () => {
     entry = b.dataset.e;
     el.querySelectorAll("[data-e]").forEach(x => { x.disabled = true; x.classList.toggle("picked", x === b); });
+    el.querySelector("#brk").hidden = false;
     LT.S3.entries[entry].edges.forEach(LT.addMapEdge);
-    log.push(`<span class="dim">02:13</span> 入口：${LT.S3.entries[entry].title} <span class="ng">成功</span>`);
+    pushLog("02:13", `入口：${LT.S3.entries[entry].title}`, "warn");
     LT.log("s3", "break", "entry", entry);
     render();
   });
+  const times = ["02:41", "03:20", "03:55", "04:30"];
+  const levels = ["warn", "warn", "bad", "bad"];
   const render = () => {
-    stepsEl.innerHTML = LT.S3.chain.map((c, i) => `<div class="chain-step ${i < reached ? "hit" : ""}">
-      <span class="chain-icon">${c.icon}</span><div class="grow"><b>${i + 2}. ${c.title}</b><div class="small">${c.desc}</div></div>
-      ${i < reached ? '<span class="badge attack">突破</span>' : i === reached ? `<button class="btn sm attack" id="go">実行 ›</button>` : '<span class="badge gray">未到達</span>'}</div>`).join('<div class="chain-arrow">↓</div>');
-    xray.hidden = false;
-    xray.innerHTML = `<span class="hl">ソラ商事のサーバーの記録</span>\n` + log.join("\n");
+    stepsEl.innerHTML = `<div class="rp-label">攻撃の進み方</div>` + LT.S3.chain.map((c, i) => `<div class="chain-step ${i < reached ? "hit" : ""}">
+      <span class="chain-icon">${c.icon}</span><div class="grow"><b>${c.title}</b><div class="small">${c.desc}</div></div>
+      ${i < reached ? '<span class="badge attack">発生</span>' : i === reached ? `<button class="btn sm attack" id="go">次へ ›</button>` : '<span class="badge gray">未発生</span>'}</div>`).join('<div class="chain-arrow">↓</div>');
     const go = stepsEl.querySelector("#go");
     if (go) go.onclick = () => {
       const c = LT.S3.chain[reached];
       reached++;
       LT.addMapEdge(c.edge);
       if (c.id === "priv") LT.addMapEdge("dbget");
-      const t = ["02:41", "03:20", "03:55", "04:30"][reached - 1];
-      log.push(`<span class="dim">${t}</span> ${c.title} <span class="ng">成功</span>${c.id === "lateral" ? " <span class=\"dim\">（対策ソフト停止 → これ以降の記録は残りにくい）</span>" : ""}`);
+      pushLog(times[reached - 1], c.title + (c.id === "lateral" ? "（監視ソフトも停止させられ、以降は記録が残りにくい）" : ""), levels[reached - 1]);
       LT.log("s3", "break", "advance", reached);
       render();
       if (reached === LT.S3.chain.length) done();
@@ -109,22 +222,22 @@ LT.S3.break = function (el) {
   };
   const done = () => {
     el.querySelector("#done").innerHTML = `<div class="ransom fade-in"><div class="ransom-hd">⚠ あなたのファイルは暗号化されました（教材の再現画面）</div>
-      <p>ソラ商事の社員のパソコンに、このような画面が表示されます。顧客データは盗まれ、社内のデータは暗号化され、バックアップは消されています。</p></div>
+      <p>ソラ商事の社員のパソコンに、このような画面が表示されます。顧客データは流出し、社内のデータは暗号化され、バックアップは消されています。</p></div>
       ${LT.S3.impactHTML({ leak: true, stop: true, recover: false })}
-      <div class="feedback ok mt">どの入口から入っても、対策がなければ同じ結末にたどり着きます。次の「なぜ守れるか」で、どこで断ち切れるかを確かめます。</div>`;
+      <div class="feedback ok mt mb0">どの入口から入られても、対策がなければ同じ結末にたどり着きます。次の「③なぜ守れるか」で、どこで断ち切れるかを確かめます。</div>`;
     LT.setAnswer("s3.break.entry", entry);
   };
 };
 
 /* ③ なぜ守れるか：対策を置いて、連鎖と被害を比べる */
 LT.S3.defend = function (el) {
-  const budget = LT.isIntro() ? 99 : 3;
+  const budget = 3;
   const active = {};
   Object.keys(LT.S3.defenses).forEach(k => active[k] = false);
   let entry = "vendor";
   el.innerHTML = `<div class="card defend">
     <h2><span class="badge defend">防御者</span> どこで断ち切るか</h2>
-    <p>${budget < 99 ? `<b>予算が限られています。対策は${budget}つまで</b>選べます。` : ""}対策を選ぶと、攻撃がどこで止まり、被害がどう変わるかが表示されます。</p>
+    <p><b>予算が限られています。対策は${budget}つまで</b>選べます。対策を選ぶと、攻撃がどこで止まり、被害がどう変わるかが表示されます。</p>
     <div class="row"><span class="small"><b>攻撃者の入口：</b></span>${Object.keys(LT.S3.entries).map(k => `<label class="toggle ${k === entry ? "on" : ""}" data-entry="${k}"><input type="radio" name="ent" ${k === entry ? "checked" : ""}> ${LT.S3.entries[k].title}</label>`).join("")}</div>
     <div class="def-grid mt" id="defs"></div>
     <div class="small" id="budget"></div>
@@ -137,9 +250,8 @@ LT.S3.defend = function (el) {
   const draw = () => {
     const n = Object.values(active).filter(Boolean).length;
     defsEl.innerHTML = Object.keys(LT.S3.defenses).map(k => { const d = LT.S3.defenses[k]; return `<button class="def ${active[k] ? "on" : ""}" data-d="${k}" ${!active[k] && n >= budget ? "disabled" : ""}><span>${d.icon}</span>${d.label}</button>`; }).join("");
-    el.querySelector("#budget").textContent = budget < 99 ? `選んだ対策：${n} / ${budget}` : "";
+    el.querySelector("#budget").textContent = `選んだ対策：${n} / ${budget}`;
     defsEl.querySelectorAll("[data-d]").forEach(b => b.onclick = () => { active[b.dataset.d] = !active[b.dataset.d]; LT.log("s3", "defend", "toggle", { def: b.dataset.d, on: active[b.dataset.d] }); draw(); });
-    // 連鎖の判定
     const steps = [LT.S3.entries[entry]].concat(LT.S3.chain);
     let stopAt = -1;
     steps.forEach((c, i) => { if (stopAt < 0 && active[c.cutBy] && !c.stop) stopAt = i; });
@@ -156,10 +268,10 @@ LT.S3.defend = function (el) {
       return `<div class="chain-step ${cls}"><span class="chain-icon">${c.icon}</span><div class="grow"><b>${c.title}</b>${stopAt === i || isOfflineSave ? `<div class="small" style="color:var(--defend)">${c.cutMsg}</div>` : ""}</div>${badge}</div>`;
     }).join('<div class="chain-arrow">↓</div>');
     el.querySelector("#impact").innerHTML = LT.S3.impactHTML({ leak, stop: reachedEncrypt, recover });
-    el.querySelector("#verdict").innerHTML = stopAt === 0 ? `<div class="feedback ok mt">入口で止まりました。最も被害が小さい形です。</div>` :
-      stopAt > 0 ? `<div class="feedback ok mt">${stopAt + 1}段階目で止まりました。${leak ? "" : "個人情報は守られています。"}</div>` :
-      recover ? `<div class="feedback ng mt">最後まで進まれましたが、バックアップのおかげで事業は戻せます。ただし盗まれた情報は戻りません。</div>` :
-      `<div class="feedback ng mt">最後まで進まれ、事業も止まりました。対策を選んでみましょう。</div>`;
+    el.querySelector("#verdict").innerHTML = stopAt === 0 ? `<div class="feedback ok mt mb0">入口で止まりました。最も被害が小さい形です。</div>` :
+      stopAt > 0 ? `<div class="feedback ok mt mb0">${stopAt + 1}段階目で止まりました。${leak ? "" : "個人情報は守られています。"}</div>` :
+      recover ? `<div class="feedback ng mt mb0">最後まで進まれましたが、バックアップのおかげで事業は戻せます。ただし盗まれた情報は戻りません。</div>` :
+      `<div class="feedback ng mt mb0">最後まで進まれ、事業も止まりました。対策を選んでみましょう。</div>`;
     LT.measure("s3", "defense_result", { entry, defenses: Object.keys(active).filter(k => active[k]) }, { stopAt, leak, stop: reachedEncrypt, recover });
     ["mfa", "patch", "segment", "least", "monitor"].forEach(k => LT.setMapDefense(k, !!active[k]));
   };

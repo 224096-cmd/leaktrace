@@ -555,3 +555,61 @@ dl.gloss dd { margin: 2px 0 0; padding-bottom: 12px; border-bottom: 1px solid va
 #leakTable tr.hit td { transition: background .3s; }
 @keyframes scanPulse { 50% { background: #fde8c8; } }
 @media (prefers-reduced-motion: reduce) { #leakTable tr.scan td { animation: none; } }
+
+/* ---------- 監視画面の再現（ステージ3） ---------- */
+.replay { border: 1px solid #2a3245; border-radius: 10px; background: #141a28; color: #d5e1f5; padding: 14px; margin-top: 8px; }
+.replay-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+.replay-clock { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 1.15rem; font-weight: 700; color: #fff; }
+.replay-clock .small { color: #8d9bb5; font-family: var(--sans); font-weight: 400; font-size: .78rem; }
+.rc-dot { width: 9px; height: 9px; border-radius: 50%; background: #e2564b; box-shadow: 0 0 0 0 rgba(226,86,75,.6); animation: rcPulse 1.4s infinite; }
+@keyframes rcPulse { 70% { box-shadow: 0 0 0 8px rgba(226,86,75,0); } 100% { box-shadow: 0 0 0 0 rgba(226,86,75,0); } }
+.replay-ctrl { display: flex; gap: 6px; flex-wrap: wrap; }
+.replay .btn.sm { min-height: 34px; }
+.replay .btn:not(.primary) { background: #1f2738; color: #d5e1f5; border-color: #33405a; }
+.replay .btn.ghost { background: transparent; border-color: transparent; color: #8d9bb5; }
+.replay-grid { display: grid; grid-template-columns: 1.35fr 1fr; gap: 14px; }
+@media (max-width: 760px) { .replay-grid { grid-template-columns: 1fr; } }
+.replay-net { background: #fff; border-radius: 8px; padding: 8px; }
+.rp-label { font-size: .72rem; font-weight: 700; letter-spacing: .1em; color: #8d9bb5; margin-bottom: 6px; }
+.replay-net .rp-label { color: #5f6b7d; }
+.replay-log { background: #0b0f19; border: 1px solid #2a3245; border-radius: 6px; height: 170px; overflow-y: auto; font-family: var(--mono); font-size: .76rem; padding: 6px; }
+.rl-empty { color: #5f6b7d; padding: 8px; font-family: var(--sans); }
+.rl-row { display: grid; grid-template-columns: 44px 40px 1fr; gap: 6px; padding: 5px 6px; border-bottom: 1px solid #1c2333; animation: rlIn .35s ease; line-height: 1.5; }
+@keyframes rlIn { from { opacity: 0; background: #2a2010; } to { opacity: 1; } }
+.rl-t { color: #8d9bb5; }
+.rl-lv { font-weight: 700; font-family: var(--sans); font-size: .7rem; text-align: center; border-radius: 3px; align-self: start; padding: 1px 0; }
+.rl-warn .rl-lv { background: #5a4310; color: #f0cf7a; }
+.rl-bad .rl-lv { background: #5a1c18; color: #f2998f; }
+.rl-bad .rl-msg { color: #ffd1cc; }
+.replay-meters { display: grid; gap: 8px; }
+.rp-meter { font-size: .78rem; }
+.rpm-top { display: flex; justify-content: space-between; margin-bottom: 3px; color: #b8c4da; }
+.rpm-top b { color: #8fd4a3; }
+.rpm-top b.ng { color: #f2998f; }
+.rpm-bar { height: 6px; background: #232b3d; border-radius: 99px; overflow: hidden; }
+.rpm-bar > div { height: 100%; transition: width .8s ease, background .4s; }
+.rp-node-hit rect { animation: nodeHit 1.2s ease-in-out infinite; }
+@keyframes nodeHit { 50% { stroke-opacity: .35; } }
+.replay #rpResult .impact { margin-top: 12px; color: var(--text); }
+.replay #rpResult .small, .replay #rpResult .feedback { color: var(--text); }
+.replay #rpResult .small { color: #b8c4da; }
+/* ステージ3②の監視ログ（明るい背景のカード内） */
+.card .replay-grid > .replay-side { background: #141a28; border-radius: 8px; padding: 10px; }
+@media (prefers-reduced-motion: reduce) { .rc-dot, .rp-node-hit rect, .rl-row { animation: none; } }
+
+/* ---------- 中継型フィッシングの自動再生 ---------- */
+.relay2 { border: 1px solid var(--line); border-radius: 10px; padding: 16px; background: #fafbfd; }
+.relay-stage { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); height: 110px; align-items: center; }
+.actor { display: flex; flex-direction: column; align-items: center; gap: 4px; transition: transform .2s; }
+.actor-ic { width: 54px; height: 54px; border-radius: 14px; background: #fff; border: 1.5px solid var(--line-strong); display: grid; place-items: center; font-size: 1.7rem; transition: border-color .2s, box-shadow .2s; }
+.actor-t { font-size: .8rem; font-weight: 700; color: var(--sub); }
+.actor.on .actor-ic { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.actor.on .actor-t { color: var(--accent-ink); }
+.relay-packet { position: absolute; top: 50%; transform: translate(-50%, -50%); background: var(--accent); color: #fff; font-size: .72rem; font-weight: 700; padding: 4px 10px; border-radius: 99px; white-space: nowrap; box-shadow: 0 3px 10px rgba(44,94,201,.35); z-index: 2; }
+.relay-packet.bad { background: var(--ng); box-shadow: 0 3px 10px rgba(184,58,50,.4); }
+.relay-caption { min-height: 2.6em; font-size: .92rem; line-height: 1.5; margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: #fff; border: 1px solid var(--line); }
+.relay-caption.bad { border-color: #e7c3c0; background: var(--attack-soft); color: var(--ng); font-weight: 600; }
+.relay-track { display: flex; gap: 6px; margin-top: 8px; }
+.rt-dot { width: 100%; height: 5px; border-radius: 99px; background: var(--accent); opacity: .3; }
+.rt-dot.on { opacity: 1; }
+.rt-dot.bad { background: var(--ng); }
