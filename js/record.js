@@ -2,7 +2,7 @@
 window.LT = window.LT || {};
 
 LT.STORE_KEY = "leaktrace_v1";
-LT.VERSION = "0.2.0";
+LT.VERSION = "0.3.0";
 
 LT.defaultState = function () {
   return {
@@ -17,7 +17,11 @@ LT.defaultState = function () {
     answers: {},             // 予想・記述課題
     scores: {},              // 判別課題などの得点
     map: { edges: [], defenses: [] },
-    measurements: []         // 研究モードの実測値
+    measurements: [],        // 実測値
+    tests: {},               // pre/post の各問の回答
+    survey: {},              // SUS の回答
+    ui: {},
+    lastRoute: ""
   };
 };
 
@@ -171,6 +175,39 @@ LT.summary = function () {
   });
 };
 
+LT.exportTestCSV = function () {
+  const rows = [];
+  ["pre", "post"].forEach(phase => {
+    const t = LT.state.tests[phase];
+    if (!t) return;
+    t.items.forEach(it => rows.push({ learnerId: LT.state.learnerId, phase, time: t.t, layer: t.layer, item: it.id, category: it.cat, answer: it.answer, correct: it.correct ? 1 : 0, seconds: t.seconds }));
+    (t.self || []).forEach((v, i) => rows.push({ learnerId: LT.state.learnerId, phase, time: t.t, layer: t.layer, item: "self" + (i + 1), category: "self", answer: v, correct: "", seconds: t.seconds }));
+    (t.intent || []).forEach((v, i) => rows.push({ learnerId: LT.state.learnerId, phase, time: t.t, layer: t.layer, item: "intent" + (i + 1), category: "intent", answer: v, correct: "", seconds: t.seconds }));
+  });
+  const sv = LT.state.survey;
+  if (sv && sv.items) sv.items.forEach((v, i) => rows.push({ learnerId: LT.state.learnerId, phase: "sus", time: sv.t, layer: sv.layer, item: "SUS" + (i + 1), category: "sus", answer: v, correct: "", seconds: "" }));
+  if (sv && sv.sus !== undefined) rows.push({ learnerId: LT.state.learnerId, phase: "sus", time: sv.t, layer: sv.layer, item: "SUS_score", category: "sus", answer: sv.sus, correct: "", seconds: "" });
+  LT.download(`leaktrace_tests_${LT.state.learnerId}.csv`, LT.toCSV(rows, ["learnerId", "phase", "time", "layer", "item", "category", "answer", "correct", "seconds"]), "text/csv");
+};
+
+/* 事前・事後の比較表示（HTML） */
+LT.prePostView = function () {
+  const pre = LT.state.tests.pre, post = LT.state.tests.post;
+  const cats = { know: "知識", phish: "フィッシング判別", action: "行動の判断" };
+  const rate = (t, c) => { if (!t) return null; const it = t.items.filter(x => x.cat === c); return it.length ? it.filter(x => x.correct).length / it.length : null; };
+  const pct = v => v === null ? "—" : Math.round(v * 100) + "%";
+  let h = `<div class="table-wrap"><table><tr><th>分類</th><th>はじめ</th><th>おわり</th><th>変化</th></tr>`;
+  Object.keys(cats).forEach(c => {
+    const a = rate(pre, c), b = rate(post, c);
+    const d = a !== null && b !== null ? Math.round((b - a) * 100) : null;
+    h += `<tr><td>${cats[c]}</td><td>${pct(a)}</td><td>${pct(b)}</td><td>${d === null ? "—" : `<b style="color:${d > 0 ? "var(--ok)" : d < 0 ? "var(--ng)" : "inherit"}">${d > 0 ? "+" : ""}${d}</b>`}</td></tr>`;
+  });
+  const ta = pre ? pre.items.filter(x => x.correct).length / pre.items.length : null;
+  const tb = post ? post.items.filter(x => x.correct).length / post.items.length : null;
+  h += `<tr><th>合計</th><th>${pct(ta)}</th><th>${pct(tb)}</th><th>${ta !== null && tb !== null ? (tb - ta >= 0 ? "+" : "") + Math.round((tb - ta) * 100) : "—"}</th></tr></table></div>`;
+  return h;
+};
+
 LT.exportMarkdown = function () {
   const st = LT.state;
   const layerName = { intro: "導入（中学生〜）", practice: "体験（高校生〜）", inquiry: "探究（大学生〜）" };
@@ -185,6 +222,11 @@ LT.exportMarkdown = function () {
   const sk = Object.keys(st.scores);
   if (!sk.length) md += "（なし）\n";
   sk.forEach(k => { const v = st.scores[k]; md += `- **${k}**: ${v.correct}/${v.total}（${v.percent}%）${v.note ? " — " + v.note : ""}\n`; });
+  ["pre", "post"].forEach(ph => {
+    const t = st.tests[ph];
+    if (t) md += `\n### ${ph === "pre" ? "はじめ" : "おわり"}のテスト\n\n- 実施: ${t.t}\n- 正答: ${t.items.filter(x => x.correct).length}/${t.items.length}\n- 所要時間: ${t.seconds} 秒\n`;
+  });
+  if (st.survey && st.survey.sus !== undefined) md += `\n### 使いやすさ（SUS）\n\n- SUSスコア: ${st.survey.sus}（0〜100、68が平均的な目安）\n- 自由記述: ${st.survey.comment || "（なし）"}\n`;
   md += `\n## 予想・記述の回答\n\n`;
   const ak = Object.keys(st.answers);
   if (!ak.length) md += "（なし）\n";

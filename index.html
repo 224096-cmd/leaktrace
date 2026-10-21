@@ -2,20 +2,22 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="description" content="個人情報漏えいの仕組みと対策を、攻撃と防御の体験から学ぶWeb教材">
+<meta name="theme-color" content="#2b5fd9">
 <title>LeakTrace（リークトレース）</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <header class="topbar">
-  <a href="#/home" class="brand">Leak<span>Trace</span></a>
-  <nav class="topnav" id="topnav">
-    <a href="#/home" data-nav="home">ホーム</a>
-    <a href="#/map" data-nav="map">攻撃経路マップ</a>
-    <a href="#/records" data-nav="records">学習記録</a>
+  <a href="#/home" class="brand" aria-label="LeakTrace ホーム"><span class="logo">LT</span><span class="brand-text">Leak<span>Trace</span></span></a>
+  <nav class="topnav" id="topnav" aria-label="メインメニュー">
+    <a href="#/home" data-nav="home"><span class="ni">🏠</span><span class="nl">ホーム</span></a>
+    <a href="#/map" data-nav="map"><span class="ni">🗺️</span><span class="nl">マップ</span></a>
+    <a href="#/records" data-nav="records"><span class="ni">📋</span><span class="nl">学習記録</span></a>
   </nav>
-  <div class="layer-pill" id="layerPill" title="学習の深さ（クリックで変更）">導入</div>
+  <button class="icon-btn" id="fontBtn" title="文字の大きさを切り替える" aria-pressed="false">あ<small>A</small></button>
+  <button class="layer-pill" id="layerPill" title="学習の深さを変える">導入層</button>
 </header>
 
 <main id="app" class="app">
@@ -23,11 +25,12 @@
 </main>
 
 <footer class="footer">
-  <p>LeakTrace — 三重大学 教育学部 技術・ものづくり教育コース 卒業研究。扱うデータはすべて架空です。入力内容は外部に送信されません。</p>
+  <p>LeakTrace — 三重大学 教育学部 技術・ものづくり教育コース 卒業研究<br>扱うデータはすべて架空です。入力内容は外部に送信されません。</p>
 </footer>
 
-<div id="glossaryPop" class="glossary-pop" hidden></div>
-<div id="toast" class="toast" hidden></div>
+<div id="bottombar" class="bottombar" hidden></div>
+<div id="glossaryPop" class="glossary-pop" role="tooltip" hidden></div>
+<div id="toast" class="toast" role="status" hidden></div>
 
 <script src="js/glossary.js"></script>
 <script src="js/record.js"></script>
@@ -37,6 +40,8 @@
 <script src="js/stage3.js"></script>
 <script src="js/stage4.js"></script>
 <script src="js/final.js"></script>
+<script src="js/test.js"></script>
+<script src="js/survey.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

@@ -44,7 +44,7 @@ LT.routes.final = function (app) {
   LT.startStage("final");
   LT.current.stage = "final";
   app.innerHTML = `
-  <div class="stage-head"><span class="stage-no">★</span><div><h1 style="margin:0">最終課題：自分の行動をふり返る</h1><div class="muted">学んだことを自分の生活につなげる</div></div></div>
+  <div class="stage-head"><a href="#/home" class="back" aria-label="ホームへ戻る">‹</a><span class="stage-icon">🧭</span><div class="grow"><div class="eyebrow">まとめ</div><h1>最終課題：自分の行動をふり返る</h1></div></div>
   <div class="card"><p>あなたの普段の行動を選んでください。選ぶと、架空のシナリオ上で何が起こりうるかと、攻撃経路マップのどこにつながるかが表示されます。正解を当てる課題ではありません。自分の「いま」を確かめるものです。</p></div>
   <div id="qs"></div>`;
   const qs = app.querySelector("#qs");
@@ -89,4 +89,9 @@ LT.routes.final = function (app) {
     practice: { title: "行動宣言", text: "このふり返りをもとに、あなたが変えようと思う行動を2つ、理由とともに書いてください。" },
     inquiry: { title: "まとめ", text: "『なぜ個人情報は漏れるのか。そして、なぜその対策が効くのか』という問いに、4つのステージで学んだことを使って自分なりに答えてください。" }
   });
+  const go = document.createElement("div");
+  go.className = "card center";
+  go.innerHTML = `<h2>おつかれさまでした</h2><p class="muted">最後に「おわりのテスト」で、はじめのテストからどれだけ変わったかを確かめましょう。</p>
+    <a class="btn primary lg" href="#/test/post">おわりのテストへ ›</a>`;
+  app.appendChild(go);
 };

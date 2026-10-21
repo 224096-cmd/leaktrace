@@ -44,7 +44,6 @@ LT.S3.see = function (el) {
   LT.prediction(el, "s3.see.pred", "この5段階の連鎖を止めるには、どうするのが効果的だと思う？",
     [{ text: "最後の『持ち出し』だけを全力で防ぐ" }, { text: "連鎖のどこか1か所でも断ち切れればよい", correct: true }, { text: "完全に防ぐのは不可能なので何もできない" }],
     "対策は「連鎖のどこかを断ち切るもの」です。入口の1か所を止めるだけでも、その先には進めません。次でいくつかの対策を置いて確かめます。");
-  LT.markStep("s3", "see");
 };
 
 /* ---------- ② 破る：攻撃者として連鎖をたどる ---------- */
@@ -73,7 +72,6 @@ LT.S3.break = function (el) {
     el.querySelector(".card.attack").appendChild(d);
   };
   render();
-  LT.markStep("s3", "break");
 };
 
 LT.S3.xray = function (reached) {
@@ -132,7 +130,6 @@ LT.S3.defend = function (el) {
     practice: { title: "説明課題", text: "予算の都合で対策を1つしか入れられないとしたら、あなたはどれを選びますか。その理由を連鎖の図を使って説明してください。" },
     inquiry: { title: "設計課題", text: "限られた予算で対策を配置するとして、どの順序で導入すべきか、根拠とともに説明してください。『手前で断つ』『多層防御』の考え方に触れること。" }
   });
-  LT.markStep("s3", "defend");
 };
 
 LT.STAGE_IMPL["3"] = { see: LT.S3.see, break: LT.S3.break, defend: LT.S3.defend };

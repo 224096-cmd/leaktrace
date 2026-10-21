@@ -49,7 +49,6 @@ LT.S1.see = async function (el) {
   LT.prediction(el, "s1.see.pred", "同じ人が『通販サイト』と『会社のメール』で同じパスワードを使っていました。通販サイトからパスワードが流出すると、会社のメールはどうなると思う？",
     [{ text: "会社のメールは別のサービスなので影響はない" }, { text: "同じパスワードなら、会社のメールにもログインされてしまう", correct: true }, { text: "ハッシュ化されているので絶対に大丈夫" }],
     "流出したパスワードをそのまま別のサービスで試すのが、次の『破る』で体験するリスト型攻撃です。使い回しは連鎖します。");
-  LT.markStep("s1", "see");
 };
 
 /* ---------- ② 破る ---------- */
@@ -89,7 +88,6 @@ LT.S1.break = function (el) {
     box.innerHTML = `<h3>もう一つの手口：総当たり</h3><p>使い回していなくても、短くて単純なパスワードは${LT.T("総当たり攻撃")}で割られます。次の『なぜ守れるか』で、あなたの端末の計算速度を実測し、文字数と種類で解読時間がどれだけ変わるかを確かめます。</p>`;
     el.appendChild(box);
   }
-  LT.markStep("s1", "break");
 };
 
 LT.S1.xrayText = function (tried, success) {
@@ -197,7 +195,6 @@ LT.S1.defend = function (el) {
     practice: { title: "説明課題", text: "「パスワードの使い回しが危険な理由」を、リスト型攻撃という言葉を使って説明してください。" },
     inquiry: { title: "説明課題", text: "多要素認証と「パスワードを長くすること」は、それぞれ攻撃のどの段階を妨げますか。両者がなぜ別々に有効なのかを説明してください。" }
   });
-  LT.markStep("s1", "defend");
 };
 
 LT.S1.drawChart = function (container, charset, rate) {

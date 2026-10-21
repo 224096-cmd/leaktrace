@@ -101,7 +101,6 @@ LT.S2.see = function (el) {
     verdict.innerHTML = `このページの本当の持ち主は <b class="mono">${LT.esc(p.reg)}</b> です。${p.sub ? `左側の <span class="mono">${LT.esc(p.sub)}</span> は飾りで、持ち主とは関係ありません。` : ""} ${suspicious ? '<span class="badge ng">本物の会社のドメインか、よく確かめましょう</span>' : ""}`;
   };
   u.oninput = render; render();
-  LT.markStep("s2", "see");
 };
 
 /* ---------- ② 破る ---------- */
@@ -142,7 +141,6 @@ LT.S2.break = function (el) {
     if (pct >= 60) LT.addMapEdge("phish");
   };
   update(el);
-  LT.markStep("s2", "break");
 };
 
 LT.S2.selectBlock = function (part, label) {
@@ -160,17 +158,15 @@ LT.S2.defend = function (el) {
   </div>`;
   const quiz = el.querySelector("#quiz");
   const items = LT.shuffle(LT.S2.samples);
-  let idx = 0, correct = 0;
+  let idx = 0, correct = 0, attempt = 0;
   const show = () => {
     if (idx >= items.length) return finish();
     const s = items[idx];
+    if (idx > 0) quiz.scrollIntoView({ block: "start", behavior: "smooth" });
     quiz.innerHTML = `
-    <div class="spread"><span class="small">${idx + 1} / ${items.length} 問</span><div class="progress" style="width:120px"><div style="width:${idx / items.length * 100}%"></div></div></div>
-    <div class="mail mt">
-      <div class="hd"><div><b>From:</b> ${LT.esc(s.from)}</div><div><b>件名:</b> ${LT.esc(s.subject)}</div></div>
-      <div class="bd">${LT.esc(s.body)}\n\n<span class="link">${LT.esc(s.url)}</span></div>
-    </div>
-    <div class="row mt"><button class="btn defend" data-a="real">本物だと思う</button><button class="btn attack" data-a="fake">フィッシングだと思う</button></div>
+    <div class="spread"><span class="small">${idx + 1} / ${items.length} 問</span><div class="progress" style="flex:1;max-width:240px"><div style="width:${idx / items.length * 100}%"></div></div></div>
+    ${LT.S2.mailHTML(s, false)}
+    <div class="grid2 mt"><button class="btn defend lg" data-a="real">✓ 本物だと思う</button><button class="btn attack lg" data-a="fake">⚠ フィッシングだと思う</button></div>
     <div id="fb"></div>`;
     quiz.querySelectorAll("button[data-a]").forEach(b => b.onclick = () => judge(s, b.dataset.a));
   };
@@ -180,14 +176,21 @@ LT.S2.defend = function (el) {
     LT.log("s2", "defend", "quiz_answer", { id: s.id, answer: ans, correct: ok });
     const fb = quiz.querySelector("#fb");
     quiz.querySelectorAll("button[data-a]").forEach(b => b.disabled = true);
-    fb.innerHTML = `<div class="card ${ok ? "ok" : "note"} mt fade-in"><p><span class="badge ${ok ? "ok" : "ng"}">${ok ? "正解" : "不正解"}</span> これは<b>${s.kind === "real" ? "本物" : "フィッシング"}</b>です。</p><ul>${s.reasons.map(r => `<li>${LT.esc(r)}</li>`).join("")}</ul><p class="urlbox mono mb0">${LT.esc(s.url)}</p><button class="btn primary mt" id="next">${idx + 1 < items.length ? "次の問題へ" : "結果を見る"}</button></div>`;
+    quiz.querySelector(".mail").outerHTML = LT.S2.mailHTML(s, true);
+    const flags = LT.S2.FLAGS[s.id] || [];
+    fb.innerHTML = `<div class="feedback ${ok ? "ok" : "ng"} fade-in"><p><b>${ok ? "正解！" : "おしい！"}</b> これは<b>${s.kind === "real" ? "本物" : "フィッシング（偽物）"}</b>です。${s.kind === "fake" ? "メールの赤い枠と番号が、見抜くための手がかりです。" : ""}</p>
+      <ol class="mb0">${s.reasons.map((r, i) => `<li>${LT.esc(r)}</li>`).join("")}</ol>
+      <p class="small mt mb0">リンクの本当の持ち主：</p>${LT.S2.urlHTML(s.url)}</div>
+      <button class="btn primary block mt" id="next">${idx + 1 < items.length ? "次の問題へ ›" : "結果を見る ›"}</button>`;
     fb.querySelector("#next").onclick = () => { idx++; show(); };
+    fb.querySelector("#next").scrollIntoView({ block: "nearest", behavior: "smooth" });
   };
   const finish = () => {
     const pct = Math.round(correct / items.length * 100);
-    LT.setScore("s2.phish_quiz", { correct, total: items.length, percent: pct, note: "フィッシング判別課題の正答率" });
+    attempt++;
+    LT.setScore(attempt === 1 ? "s2.phish_quiz" : "s2.phish_quiz.retry" + (attempt - 1), { correct, total: items.length, percent: pct, note: attempt === 1 ? "フィッシング判別課題の正答率（1回目）" : `${attempt}回目` });
     quiz.innerHTML = `<div class="card ok center"><div class="huge">${correct} / ${items.length}</div><p>正答率 ${pct}%</p><p>見分けるコツは3つ。①<b>送信元</b>のドメイン、②<b>リンク</b>の本当のドメイン、③<b>緊急性</b>で急かされていないか。この正答率は学習記録に保存されました（事前・事後の比較に使えます）。</p><button class="btn" id="again">もう一度挑戦</button></div>`;
-    quiz.querySelector("#again").onclick = () => { idx = 0; correct = 0; show(); };
+    quiz.querySelector("#again").onclick = () => { idx = 0; correct = 0; items.splice(0, items.length, ...LT.shuffle(LT.S2.samples)); show(); };
     LT.addMapEdge("cred");
   };
   show();
@@ -197,7 +200,35 @@ LT.S2.defend = function (el) {
     practice: { title: "説明課題", text: "友達に「このメール本物かな？」と聞かれました。どこをどう確かめればよいか、手順を説明してください。" },
     inquiry: { title: "説明課題", text: "送信元アドレスの偽装は技術的な対策（DMARC など）でも減らせます。それでも「リンクのドメインを確認する」人の習慣が重要なのはなぜか、説明してください。" }
   });
-  LT.markStep("s2", "defend");
+};
+
+/* 判別課題の「怪しい箇所」：reasons の順番に対応（from / subject / body / url） */
+LT.S2.FLAGS = {
+  q1: ["from", "body", "url"],
+  q3: ["url", "body", null],
+  q5: ["from", "url", "body"]
+};
+
+/* URL を「飾り」と「本当のドメイン」に色分けしたHTML */
+LT.S2.urlHTML = function (url) {
+  const m = url.match(/^(https?:\/\/)?([^\/]+)(\/.*)?$/i);
+  if (!m) return `<div class="urlbox">${LT.esc(url)}</div>`;
+  const labels = m[2].split(".");
+  const reg = labels.slice(-2).join("."), sub = labels.slice(0, -2).join(".");
+  return `<div class="urlbox"><span class="sch">${LT.esc(m[1] || "")}</span>${sub ? `<span class="subd">${LT.esc(sub)}.</span>` : ""}<span class="dom">${LT.esc(reg)}</span><span class="path">${LT.esc(m[3] || "")}</span></div>`;
+};
+
+/* メールアプリ風の表示。reveal=true で怪しい箇所に番号つきの枠 */
+LT.S2.mailHTML = function (s, reveal) {
+  const flags = reveal ? (LT.S2.FLAGS[s.id] || []) : [];
+  const mark = (part) => { const n = flags.indexOf(part); return n >= 0 ? { cls: " flag", tag: `<span class="flag-n">${n + 1}</span>` } : { cls: "", tag: "" }; };
+  const name = s.from.split("<")[0].trim();
+  const f = mark("from"), sb = mark("subject"), b = mark("body"), u = mark("url");
+  return `<div class="mail mt">
+    <div class="hd"><div class="subj"><span class="${sb.cls}">${LT.esc(s.subject)}</span>${sb.tag}</div>
+      <div><span class="avatar">${LT.esc(name.slice(0, 1))}</span><span class="${f.cls}">${LT.esc(s.from)}</span>${f.tag}</div></div>
+    <div class="bd"><span class="${b.cls}">${LT.esc(s.body)}</span>${b.tag}\n\n<span class="link${u.cls}">${LT.esc(s.url)}</span>${u.tag}</div>
+  </div>`;
 };
 
 LT.STAGE_IMPL["2"] = { see: LT.S2.see, break: LT.S2.break, defend: LT.S2.defend };
