@@ -139,9 +139,16 @@ LT.stageShell = function (app, stage, stepKey, renderers) {
   const head = document.createElement("div");
   head.className = "stage-head";
   head.innerHTML = `<div class="kicker">${LT.stageLabel(stage)}</div>
-    <h1>${stage.title}<span class="h-sub"> — ${stage.sub}</span></h1>${LT.tagsHTML(stage.tags)}`;
+    <h1>${stage.title}<span class="h-sub"> — ${stage.sub}</span></h1>
+    <div class="spread">${LT.tagsHTML(stage.tags)}${Object.keys(st.steps).length ? '<button class="link-btn" id="stageReset">このステージをやり直す</button>' : ""}</div>`;
   const DEF = LT.STEP_DEF.map((d, k) => Object.assign({}, d, stage.steps ? stage.steps[k] : {}));
   app.appendChild(head);
+  const sr = head.querySelector("#stageReset");
+  if (sr) sr.onclick = () => {
+    if (!sr.dataset.armed) { sr.dataset.armed = "1"; sr.textContent = "もう一度押すとやり直します（回答は残ります）"; return; }
+    LT.resetProgress(stage.id); LT.toast(`${stage.title}の進み具合をリセットしました`);
+    if (location.hash === `${stage.route}/see` || location.hash === stage.route) LT.render(); else location.hash = `${stage.route}/see`;
+  };
 
   // 3段階のタブ
   const steps = document.createElement("nav");
@@ -284,7 +291,13 @@ LT.routes.home = function (app) {
     <div class="kicker">個人情報漏えいを、攻撃と防御の体験から学ぶ</div>
     <h1>なぜ個人情報は漏れるのか。<br>なぜその対策が効くのか。</h1>
     <p class="lead">最近の実際の漏えい事件と同じ「型」の出来事を、架空の会社で再現します。攻撃者と防御者の両方の立場で、各ステージを「①見る → ②破る → ③なぜ守れるか」の順に進みます。</p>
-    <div class="row"><a class="btn primary lg" href="${cta.href}">${cta.label}</a><span class="small">進み具合 ${prog.done} / ${prog.total}</span></div>
+    <div class="row"><a class="btn primary lg" href="${cta.href}">${cta.label}</a><span class="small">進み具合 ${prog.done} / ${prog.total}</span>${prog.done ? '<button class="link-btn" id="resetOpen">リセット</button>' : ""}</div>
+    <div class="reset-panel" id="resetPanel" hidden>
+      <h3>進み具合をリセットする</h3>
+      <div class="reset-opt"><button class="btn" id="rsProgress">進み具合だけリセット</button><span class="small">各ステージの完了の印と、攻撃経路マップの線を消します。回答やテストの結果、操作の記録は残ります。もう一度最初から学ぶときに。</span></div>
+      <div class="reset-opt"><button class="btn danger" id="rsAll">すべての記録を消去</button><span class="small">回答・テスト・アンケートを含む、この端末の学習記録をすべて消します。研究で使う場合は、先に「学習記録」から書き出してください。</span></div>
+      <button class="btn ghost sm" id="rsCancel">やめる</button>
+    </div>
   </section>
 
   <div class="stats">
@@ -313,6 +326,15 @@ LT.routes.home = function (app) {
       <a href="#/survey"><b>使いやすさアンケート</b><span>${LT.state.scores["survey.sus"] ? "回答済み" : "最後に答える"}</span></a>
     </div></details>`;
 
+  const panel = app.querySelector("#resetPanel"), ro = app.querySelector("#resetOpen");
+  if (ro) ro.onclick = () => { panel.hidden = !panel.hidden; };
+  app.querySelector("#rsCancel").onclick = () => { panel.hidden = true; };
+  app.querySelector("#rsProgress").onclick = () => { LT.resetProgress(); LT.toast("進み具合をリセットしました"); LT.render(); };
+  app.querySelector("#rsAll").onclick = (e) => {
+    const b = e.currentTarget;
+    if (!b.dataset.armed) { b.dataset.armed = "1"; b.textContent = "もう一度押すと消去します"; return; }
+    LT.reset(); LT.toast("すべての記録を消去しました"); location.hash = "#/ethics";
+  };
   const grid = app.querySelector("#stageGrid");
   items.forEach(it => {
     const s = it.stage, isNext = next && next.key === it.key;

@@ -2,7 +2,7 @@
 window.LT = window.LT || {};
 
 LT.STORE_KEY = "leaktrace_v1";
-LT.VERSION = "0.6.0";
+LT.VERSION = "0.6.1";
 
 LT.defaultState = function () {
   return {
@@ -43,6 +43,22 @@ LT.load = function () {
 
 LT.save = function () {
   try { localStorage.setItem(LT.STORE_KEY, JSON.stringify(LT.state)); } catch (e) { /* 容量超過など */ }
+};
+
+/* 進み具合のリセット。stageId を指定するとそのステージだけ。
+   回答・テスト・アンケート・操作ログは研究データとして残す（リセットしたことも記録する） */
+LT.resetProgress = function (stageId) {
+  const st = LT.state;
+  const ids = stageId ? [stageId] : Object.keys(st.stages);
+  ids.forEach(id => { delete st.stages[id]; });
+  if (LT.MAP) {
+    const drop = LT.MAP.edges.filter(e => !stageId || e.stage === stageId).map(e => e.id);
+    st.map.edges = st.map.edges.filter(e => !drop.includes(e));
+    if (!stageId) st.map.defenses = [];
+  }
+  if (!stageId || (st.lastRoute || "").indexOf(stageId === "final" ? "#/final" : "#/stage/" + stageId.slice(1)) === 0) st.lastRoute = "";
+  LT.log(stageId || "", "", "progress_reset", stageId ? "stage" : "all");
+  LT.save();
 };
 
 LT.reset = function () {

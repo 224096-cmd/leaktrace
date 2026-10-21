@@ -86,13 +86,18 @@ LT.routes.final = function (app) {
   LT.startStage("final");
   LT.current.stage = "final";
   app.innerHTML = `
-  <div class="stage-head"><div class="kicker">まとめ</div><h1>漏えいの後に<span class="h-sub"> — 通知が届いたら・自分の行動</span></h1>${LT.tagsHTML(["通知への対応", "ふり返り"])}</div>
+  <div class="stage-head"><div class="kicker">まとめ</div><h1>漏えいの後に<span class="h-sub"> — 通知が届いたら・自分の行動</span></h1><div class="spread">${LT.tagsHTML(["通知への対応", "ふり返り"])}${LT.stageState("final").completedAt ? '<button class="link-btn" id="stageReset">このステージをやり直す</button>' : ""}</div></div>
   ${LT.caseCard("final")}
   <div id="notice"></div>
   <h2 class="section-title">自分の行動をふり返る</h2>
   <div class="card"><p class="mb0">あなたの普段の行動を選んでください。選ぶと、架空のシナリオ上で何が起こりうるかと、攻撃経路マップのどこにつながるかが表示されます。正解を当てる課題ではありません。自分の「いま」を確かめるものです。</p></div>
   <div id="qs"></div>`;
   LT.FINAL.notice(app.querySelector("#notice"));
+  const sr = app.querySelector("#stageReset");
+  if (sr) sr.onclick = () => {
+    if (!sr.dataset.armed) { sr.dataset.armed = "1"; sr.textContent = "もう一度押すとやり直します（回答は残ります）"; return; }
+    LT.resetProgress("final"); LT.toast("まとめの進み具合をリセットしました"); LT.render();
+  };
   const qs = app.querySelector("#qs");
   const answers = {};
   LT.FINAL.questions.forEach(q => {

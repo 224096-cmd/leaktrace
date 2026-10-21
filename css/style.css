@@ -426,3 +426,14 @@ dl.gloss dd { margin: 2px 0 0; padding-bottom: 12px; border-bottom: 1px solid va
 .case-more { grid-column: 1 / -1; font-size: .8rem; color: var(--accent); }
 .case[open] .case-more { display: none; }
 .case[open] > summary { margin-bottom: 10px; }
+
+/* ---------- リセット ---------- */
+.link-btn { background: none; border: 0; padding: 4px 2px; font: inherit; font-size: .84rem; color: var(--sub); text-decoration: underline; cursor: pointer; }
+.link-btn:hover { color: var(--accent); }
+.link-btn[data-armed] { color: var(--ng); font-weight: 700; }
+.reset-panel { margin-top: 16px; border: 1px solid var(--line-strong); border-radius: var(--radius); background: #fff; padding: 16px 18px; max-width: 640px; }
+.reset-panel h3 { font-size: 1rem; }
+.reset-opt { display: grid; grid-template-columns: 210px 1fr; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.reset-opt .btn { width: 100%; }
+.btn[data-armed] { background: var(--ng); color: #fff; border-color: var(--ng); }
+@media (max-width: 560px) { .reset-opt { grid-template-columns: 1fr; gap: 6px; } }
