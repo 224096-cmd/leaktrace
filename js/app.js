@@ -22,8 +22,14 @@ LT.STAGES = [
 LT.stageLabel = (stage) => stage.no === 0 ? "導入" : stage.no === "★" ? "まとめ" : `ステージ ${stage.no} / 4`;
 
 LT.layer = () => LT.state.layer;
-LT.isIntro = () => LT.state.layer === "intro";
-LT.isInquiry = () => LT.state.layer === "inquiry";
+/* 学習層は廃止し、全員が同じ内容を学ぶ（発展内容は「もっと深く」で開く） */
+LT.isIntro = () => false;
+LT.isInquiry = () => false;
+
+/* 「もっと深く」：大学生や、興味のある人向けの発展内容（開くと読める） */
+LT.deeper = function (title, html) {
+  return `<details class="deeper"><summary>🔎 もっと深く：${title}</summary><div class="deeper-body">${html}</div></details>`;
+};
 
 LT.$ = (sel, root) => (root || document).querySelector(sel);
 LT.$$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
@@ -101,8 +107,6 @@ LT.render = function () {
   if (parts[0] === "stage" || parts[0] === "final") { LT.state.lastRoute = hash; LT.save(); }
 
   LT.$$("[data-nav]").forEach(a => a.classList.toggle("active", a.dataset.nav === (parts[0] === "stage" || parts[0] === "final" ? "home" : parts[0])));
-  const L = LT.LAYERS[LT.state.layer];
-  document.getElementById("layerPill").innerHTML = `<span>${L.icon}</span><span class="lp-t"> ${L.name}層</span>`;
   const bar = document.getElementById("bottombar");
   bar.hidden = true; bar.innerHTML = "";
   document.body.classList.remove("has-bottombar");
@@ -233,18 +237,21 @@ LT.prediction = function (container, key, question, choices, explain, onDone) {
 
 /* 記述課題（層によって問いを変える） */
 LT.writingTask = function (container, key, prompts) {
-  const p = prompts[LT.layer()] || prompts.practice;
+  const p = prompts.practice || prompts.intro;
+  const hint = prompts.intro && prompts.intro.text !== p.text ? prompts.intro.text : "";
+  const deep = prompts.inquiry && prompts.inquiry.text !== p.text ? prompts.inquiry.text : "";
   const saved = LT.state.answers[key];
   const box = document.createElement("div");
   box.className = "card write";
   box.innerHTML = `<div class="card-label">✏️ ${p.title}</div><p class="q">${p.text}</p>
+    ${hint ? `<p class="small">💡 書き出しのヒント：${hint}</p>` : ""}
     <textarea placeholder="ここに書く">${saved ? LT.esc(saved.value) : ""}</textarea>
+    ${deep ? `<details class="deeper mt"><summary>🔎 もっと深く考えたい人へ</summary><div class="deeper-body">${deep}</div></details>` : ""}
     <div class="spread mt"><span class="small count">0 文字</span><button class="btn primary sm">保存する</button></div>`;
   const ta = box.querySelector("textarea"), count = box.querySelector(".count");
-  const upd = () => { count.textContent = ta.value.length + " 文字" + (saved ? "（保存済み）" : ""); };
+  count.textContent = ta.value.length + " 文字" + (saved ? "（保存済み）" : "");
   ta.oninput = () => { count.textContent = ta.value.length + " 文字"; };
-  upd();
-  box.querySelector("button").onclick = () => {
+  box.querySelector("button.primary").onclick = () => {
     const v = ta.value.trim();
     if (!v) { LT.toast("まだ何も書かれていません"); return; }
     LT.setAnswer(key, v); LT.toast("保存しました"); count.textContent = v.length + " 文字（保存済み）";
@@ -257,35 +264,32 @@ LT.writingTask = function (container, key, prompts) {
 LT.flow = function () {
   const sum = LT.summary();
   const st = (id) => sum.find(x => x.id === id) || {};
-  const items = [{ key: "pre", icon: "📝", title: "はじめのテスト", href: "#/test/pre", done: !!LT.state.tests.pre }];
+  const items = [];
   LT.STAGES.forEach(s => {
     const x = st(s.id);
     const n = s.id === "final" ? (x.completed ? 1 : 0) : (x.see ? 1 : 0) + (x.break ? 1 : 0) + (x.defend ? 1 : 0);
     items.push({ key: s.id, icon: s.icon, title: s.title, href: s.route, done: !!x.completed, part: n, total: s.id === "final" ? 1 : 3, stage: s });
   });
-  items.push({ key: "post", icon: "🏁", title: "おわりのテスト", href: "#/test/post", done: !!LT.state.tests.post });
-  items.push({ key: "survey", icon: "💬", title: "アンケート", href: "#/survey", done: !!LT.state.scores["survey.sus"] });
   const next = items.find(it => !it.done);
   return { items, next };
 };
 
 LT.routes.home = function (app) {
   const prog = LT.progress();
-  const L = LT.LAYERS[LT.state.layer];
   const { items, next } = LT.flow();
   const resume = LT.state.lastRoute;
   const nextStage = next && next.stage;
   const resumeOk = resume && nextStage && resume.indexOf(nextStage.route) === 0;
   const cta = !next ? { href: "#/records", label: "学習記録を見る" } :
-    resumeOk ? { href: resume, label: `続きから（${next.title}）` } : { href: next.href, label: next.key === "pre" ? "はじめのテストから始める" : `${next.title} を始める` };
+    resumeOk ? { href: resume, label: `続きから（${next.title}）` } : { href: next.href, label: next.key === "s0" ? "はじめる" : `${next.title} へ進む` };
 
   app.innerHTML = `
   <section class="hero">
     <div class="hero-text">
-      <div class="eyebrow">${L.icon} ${L.name}層（${L.who}）・ID ${LT.esc(LT.state.learnerId)}</div>
+      <div class="eyebrow">中学生・高校生・大学生向け　個人情報漏えいの体験型教材</div>
       <h1>なぜ個人情報は漏れるのか。<br>なぜその対策が効くのか。</h1>
       <p>最近の実際の漏えい事件と同じ「型」の出来事を、架空の会社で再現します。あなたは<span class="badge attack">攻撃者</span>と<span class="badge defend">防御者</span>の両方になって、仕組みと対策の根拠を確かめます。</p>
-      <div class="row"><a class="btn primary lg" href="${cta.href}">▶ ${cta.label}</a><a class="btn ghost" href="#/layer">学習層を変える</a></div>
+      <div class="row"><a class="btn primary lg" href="${cta.href}">▶ ${cta.label}</a><a class="btn ghost" href="#/map">攻撃経路マップ</a></div>
     </div>
     <div class="hero-ring">${LT.ring(prog.ratio, 132, "var(--accent)")}<div class="small center">${prog.done} / ${prog.total} 段階</div></div>
   </section>
@@ -298,7 +302,14 @@ LT.routes.home = function (app) {
     <a class="tile" href="#/glossary"><span class="tile-icon">📖</span><div><b>用語集</b><small>出てきた言葉を確かめる</small></div></a>
     <a class="tile" href="#/guide"><span class="tile-icon">👩‍🏫</span><div><b>授業での使い方</b><small>先生向け：時間配分と進め方</small></div></a>
     <a class="tile" href="#/records"><span class="tile-icon">📋</span><div><b>学習記録</b><small>結果を書き出す</small></div></a>
-  </div>`;
+  </div>
+  <details class="card mt research-box"><summary><b>研究・授業評価で使う場合</b><span class="small">（はじめ／おわりのテスト・アンケート）</span></summary>
+    <p class="small mt">学習の前後で理解の変化を測るときに使います。授業で使うだけなら受けなくてもかまいません。</p>
+    <div class="tile-row">
+      <a class="tile" href="#/test/pre"><span class="tile-icon">📝</span><div><b>はじめのテスト</b><small>${LT.state.tests.pre ? "受験済み" : "学習前に受ける"}</small></div>${LT.state.tests.pre ? '<span class="badge ok">済</span>' : ""}</a>
+      <a class="tile" href="#/test/post"><span class="tile-icon">🏁</span><div><b>おわりのテスト</b><small>${LT.state.tests.post ? "受験済み" : "学習後に受ける"}</small></div>${LT.state.tests.post ? '<span class="badge ok">済</span>' : ""}</a>
+      <a class="tile" href="#/survey"><span class="tile-icon">💬</span><div><b>使いやすさアンケート</b><small>${LT.state.scores["survey.sus"] ? "回答済み" : "最後に答える"}</small></div>${LT.state.scores["survey.sus"] ? '<span class="badge ok">済</span>' : ""}</a>
+    </div></details>`;
 
   const ol = app.querySelector("#flow");
   items.forEach(it => {
@@ -335,21 +346,22 @@ LT.routes.glossary = function (app) {
 /* ---------- 授業での使い方（先生向け） ---------- */
 LT.routes.guide = function (app) {
   app.innerHTML = `<h1>授業での使い方</h1>
-  <div class="card"><h2>対象と学習層</h2>
-    <div class="table-wrap"><table><tr><th>学習層</th><th>主な対象</th><th>関連する学習内容</th></tr>
-      <tr><td>🌱 導入</td><td>中学生</td><td>技術・家庭（技術分野）「D 情報の技術」：情報セキュリティ、情報モラル</td></tr>
-      <tr><td>🔧 体験</td><td>高校生</td><td>情報Ⅰ「(1) 情報社会の問題解決」：個人情報の保護、情報セキュリティ、関係する法規</td></tr>
-      <tr><td>🔬 探究</td><td>大学生</td><td>情報倫理、情報セキュリティ概論（教養科目など）</td></tr></table></div></div>
+  <div class="card"><h2>対象と関連する学習内容</h2>
+    <p>中学生から大学生まで、同じ画面で学べるように作っています。基本の説明は中学生にも分かる言葉で書き、専門的な内容は「🔎 もっと深く」を開くと読めるようにしています。</p>
+    <div class="table-wrap"><table><tr><th>対象</th><th>関連する学習内容</th><th>使い方の例</th></tr>
+      <tr><td>中学生</td><td>技術・家庭（技術分野）「D 情報の技術」：情報セキュリティ、情報モラル</td><td>各ステージの体験と「見る」を中心に</td></tr>
+      <tr><td>高校生</td><td>情報Ⅰ「(1) 情報社会の問題解決」：個人情報の保護、情報セキュリティ、関係する法規</td><td>体験に加えて、記述課題で根拠を説明させる</td></tr>
+      <tr><td>大学生</td><td>情報倫理、情報セキュリティ概論（教養科目など）</td><td>「もっと深く」と、ステージ3の対策設計を議論に使う</td></tr></table></div></div>
   <div class="card"><h2>時間配分の例（50分×2回）</h2>
     <div class="table-wrap"><table><tr><th>回</th><th>内容</th><th>目安</th></tr>
-      <tr><td rowspan="4">1回目</td><td>はじめのテスト</td><td>10分</td></tr>
-      <tr><td>導入「漏えいはなぜ起きる？」</td><td>8分</td></tr>
+      <tr><td rowspan="4">1回目</td><td>導入「漏えいはなぜ起きる？」</td><td>10分</td></tr>
+      <tr><td>（研究で使う場合は、最初に「はじめのテスト」10分）</td><td>—</td></tr>
       <tr><td>ステージ1 不正ログイン</td><td>12分</td></tr>
       <tr><td>ステージ2 フィッシング</td><td>15分（ステージ1は「見る」「破る」まででも可）</td></tr>
       <tr><td rowspan="4">2回目</td><td>ステージ3 ランサムウェア</td><td>12分</td></tr>
       <tr><td>ステージ4 人為ミス</td><td>12分</td></tr>
       <tr><td>まとめ「漏えいの後に」</td><td>8分</td></tr>
-      <tr><td>おわりのテスト・アンケート</td><td>15分</td></tr></table></div>
+      <tr><td>攻撃経路マップでふり返り（研究で使う場合は、おわりのテスト・アンケート）</td><td>10〜15分</td></tr></table></div>
     <p class="small mt">1回（50分）で行う場合は、導入とステージ2・4を中心にし、ほかは「見る」だけにする方法があります。</p></div>
   <div class="card"><h2>準備と注意</h2><ul>
     <li>端末：タブレットまたはPCのブラウザ。一度開けば、授業中にネットが切れても動きます。</li>
@@ -371,26 +383,15 @@ LT.routes.ethics = function (app) {
       <li><b>入力した内容は外部に送信されません。</b><br>この教材はブラウザの中だけで動き、学習記録もこの端末にだけ保存されます。</li>
     </ol>
     <label class="choice agree"><input type="checkbox" id="agree"><span>上の内容を理解し、学んだ知識を守るために使うことに同意します</span></label>
-    <button class="btn primary block lg mt" id="go" disabled>学習層を選んで始める ›</button>
+    <button class="btn primary block lg mt" id="go" disabled>はじめる ›</button>
   </div>`;
   const cb = app.querySelector("#agree"), go = app.querySelector("#go");
   cb.onchange = () => go.disabled = !cb.checked;
-  go.onclick = () => { LT.state.ethicsAccepted = true; LT.save(); LT.log("", "", "ethics_accepted"); location.hash = "#/layer"; };
+  go.onclick = () => { LT.state.ethicsAccepted = true; LT.save(); LT.log("", "", "ethics_accepted"); location.hash = "#/home"; };
 };
 
-/* ---------- 学習層の選択 ---------- */
-LT.routes.layer = function (app) {
-  app.innerHTML = `<div class="narrow"><h1 class="center">学習の深さを選ぶ</h1><p class="center muted">同じ教材の中で、説明の深さと課題の難しさが変わります。途中でいつでも変えられます（右上のボタン）。</p><div class="layer-list" id="layers"></div></div>`;
-  const g = app.querySelector("#layers");
-  Object.keys(LT.LAYERS).forEach(k => {
-    const l = LT.LAYERS[k];
-    const d = document.createElement("button");
-    d.className = "layer-card" + (LT.state.layer === k ? " selected" : "");
-    d.innerHTML = `<span class="layer-icon">${l.icon}</span><span class="grow"><b>${l.name}層</b> <small>${l.who}</small><br><span class="small">${l.desc}</span></span>${LT.state.layer === k ? '<span class="badge ok">選択中</span>' : '<span class="chev">›</span>'}`;
-    d.onclick = () => { LT.state.layer = k; LT.save(); LT.log("", "", "layer_select", k); location.hash = "#/home"; };
-    g.appendChild(d);
-  });
-};
+/* ---------- 学習層の選択（廃止。古いリンクはホームへ） ---------- */
+LT.routes.layer = function () { location.hash = "#/home"; };
 
 /* ---------- 学習記録 ---------- */
 LT.routes.records = function (app) {
@@ -470,7 +471,6 @@ document.addEventListener("DOMContentLoaded", () => {
   LT.state.ui = LT.state.ui || {};
   LT.initGlossary();
   LT.applyFont();
-  document.getElementById("layerPill").onclick = () => { location.hash = "#/layer"; };
   document.getElementById("fontBtn").onclick = () => { LT.state.ui.fontLarge = !LT.state.ui.fontLarge; LT.save(); LT.applyFont(); };
   window.addEventListener("hashchange", LT.render);
   window.addEventListener("beforeunload", () => { if (LT.current.stage) LT.addSeconds(LT.current.stage, (Date.now() - LT.current.enteredAt) / 1000); });

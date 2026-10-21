@@ -124,6 +124,9 @@ LT.S2.see = function (el) {
   };
   u.oninput = render; render();
   LT.S2.relay(el);
+  el.insertAdjacentHTML("beforeend", LT.deeper("送信元のチェックを通る偽メールが増えている", `<p>メールには、送信元のドメインが本物かを受信側が確かめる仕組み（${LT.T("DMARC")} など）があります。2025年に通信事業者へ対応が求められると、攻撃者は手口を変えました。</p>
+    <p>フィッシング対策協議会の報告では、2025年2月には、本物のドメインになりすましたメールが全体の約69%を占めていました。ところが12月には、攻撃者が<b>自分で取った別のドメイン</b>を使い、送信元のチェックを正しく通るメールが約75%を占めるようになりました。</p>
+    <p class="mb0">つまり「迷惑メールに分けられなかった」「送信元のチェックを通った」ことは、本物の会社からのメールである証明にはなりません。最後は、ドメインそのものが本物かを人が確かめる必要があります。</p>`));
 };
 
 /* 中継型フィッシングの図（概念）。3つの列：あなた／偽サイト／本物のサイト */
@@ -208,6 +211,9 @@ LT.S2.selectBlock = function (part, label) {
 /* ---------- ③ なぜ守れるか：判別課題（自動採点） ---------- */
 LT.S2.defend = function (el) {
   const authBox = document.createElement("div");
+  const spotBox = document.createElement("div");
+  el.appendChild(spotBox);
+  LT.S2.spot(spotBox);
   el.appendChild(authBox);
   LT.S2.auth(authBox);
   const quizWrap = document.createElement("div");
@@ -263,6 +269,49 @@ LT.S2.defend = function (el) {
     practice: { title: "説明課題", text: "友達に「このメール本物かな？」と聞かれました。どこをどう確かめればよいか、手順を説明してください。" },
     inquiry: { title: "説明課題", text: "送信元アドレスの偽装は技術的な対策（DMARC など）でも減らせます。それでも「リンクのドメインを確認する」人の習慣が重要なのはなぜか、説明してください。" }
   });
+};
+
+/* 偽サイトを見破る：怪しい箇所をタップして見つける */
+LT.S2.SPOTS = [
+  { k: "url", t: "アドレスバーのドメイン", why: "本当の持ち主は account-check.com。ソラ証券の本物（sora-sec.co.jp）とは別の会社です。見た目の画面よりも、まずアドレスを確かめます。" },
+  { k: "banner", t: "不安をあおる赤い帯", why: "「24時間以内に確認しないと取引停止」のように急がせて、落ち着いて確かめる時間を奪います。" },
+  { k: "pin", t: "取引暗証番号まで入力させる欄", why: "ログインの画面で、取引暗証番号やカード番号まで一度に入力させるのは不自然です。盗んだ情報で取引や出金をするためです。" },
+  { k: "text", t: "不自然な日本語", why: "「ご本人様確認を完成してください」のような、ふだん使わない言い回しは、偽サイトによく見られる手がかりの一つです（最近は自然な文章の偽サイトも増えているので、これだけに頼らないこと）。" }
+];
+LT.S2.spot = function (box) {
+  const found = new Set();
+  box.innerHTML = `<div class="card defend"><h2><span class="badge defend">防御者</span> 偽サイトを見破る</h2>
+    <p>SMSのリンクを開くと、次の画面が出ました。<b>怪しいところを4つ</b>見つけて、タップしてください。</p>
+    <div class="browser">
+      <div class="br-bar"><span class="br-dots"><i></i><i></i><i></i></span><span class="br-url spot" data-k="url">🔒 https://sora-sec.<b>account-check.com</b>/login</span></div>
+      <div class="br-body">
+        <div class="br-banner spot" data-k="banner">⚠ お客様の口座で不審な取引を検知しました。24時間以内に確認しない場合、取引を停止します。</div>
+        <div class="br-logo">🌤 ソラ証券</div>
+        <p class="br-text spot" data-k="text">ご本人様確認を完成してください。</p>
+        <div class="br-field">ログインID<span></span></div>
+        <div class="br-field">パスワード<span></span></div>
+        <div class="br-field spot" data-k="pin">取引暗証番号（4桁）<span></span></div>
+        <div class="br-btn">ログイン</div>
+      </div>
+    </div>
+    <div class="row mt"><span class="small" id="spotCount">見つけた数：0 / 4</span><button class="btn ghost sm" id="spotHint">ヒント</button></div>
+    <ol class="spot-list" id="spotList"></ol>
+    <p class="small">🔒（鍵マーク）は「通信が暗号化されている」という意味で、「本物のサイト」という意味ではありません。偽サイトにも鍵マークは付きます。</p></div>`;
+  const list = box.querySelector("#spotList");
+  box.querySelectorAll(".spot").forEach(el => el.onclick = () => {
+    const k = el.dataset.k;
+    if (found.has(k)) return;
+    found.add(k); el.classList.add("found");
+    const sp = LT.S2.SPOTS.find(x => x.k === k);
+    list.insertAdjacentHTML("beforeend", `<li class="fade-in"><b>${sp.t}</b><br><span class="small">${sp.why}</span></li>`);
+    box.querySelector("#spotCount").textContent = `見つけた数：${found.size} / 4`;
+    LT.log("s2", "defend", "spot", k);
+    if (found.size === 4) { LT.setScore("s2.spot", { correct: 4, total: 4, percent: 100, note: "偽サイトの怪しい箇所" }); LT.toast("4つすべて見つけました！"); }
+  });
+  box.querySelector("#spotHint").onclick = () => {
+    const left = LT.S2.SPOTS.find(x => !found.has(x.k));
+    if (left) { const el = box.querySelector(`.spot[data-k=${left.k}]`); el.classList.add("hint"); setTimeout(() => el.classList.remove("hint"), 1500); }
+  };
 };
 
 /* 認証方式の比較 */

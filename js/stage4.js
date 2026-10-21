@@ -33,6 +33,55 @@ LT.S4.see = function (el) {
   LT.prediction(el, "s4.see.pred", "保護者30人へ同じお知らせを送ります。全員のアドレスをCC欄に入れて送ると、何が起きる？",
     [{ text: "問題ない。宛先は送った自分にしか見えない" }, { text: "受け取った30人全員に、ほかの29人のメールアドレスが見えてしまう", correct: true }, { text: "メールが届かない" }],
     "CCは受信者全員に宛先が見えます。メールアドレスも、誰の保護者かが分かれば個人情報です。互いに見せない場合はBCCを使います。");
+  LT.S4.share(el);
+  el.insertAdjacentHTML("beforeend", LT.deeper("ミスは「人の注意」だけでは防ぎきれない", `<p>人は急いでいるときや慣れた作業ほど、確認を飛ばしがちです。そこで、ミスが起きにくい・起きても被害が小さい仕組みを組み合わせます。</p>
+    <ul><li><b>送信の保留</b>：送信ボタンを押してから数分間は実際には送らず、取り消せるようにする</li>
+    <li><b>社外ドメインの警告</b>：学校や会社の外のアドレスが入っていると、送る前に目立つ警告を出す</li>
+    <li><b>多人数への送信の制限</b>：一定人数を超える宛先はToやCcに入れられないようにし、一斉配信の仕組みを使う</li>
+    <li><b>共有範囲の初期設定を狭くする</b>：最初から「制限付き」にしておき、広げるときだけ操作が必要にする</li>
+    <li><b>そもそも載せない</b>：連絡用の名簿に、成績や家庭の様子など不要な情報を書かない</li></ul>
+    <p class="mb0">ステージ4の③では、このうち「送る前の確認」に本当に効き目があるかを、自分の操作で確かめます。</p>`));
+};
+
+/* 共有リンクの公開範囲：設定を切り替えると、見られる人の範囲が変わる */
+LT.S4.SHARE = [
+  { k: "restricted", icon: "🔒", t: "制限付き（招待した人だけ）", ring: 1, who: "あなたが招待した先生2人だけが開けます。リンクが転送されても、招待されていない人は開けません。" },
+  { k: "link", icon: "🔗", t: "リンクを知っている全員", ring: 2, who: "リンクを知っていれば誰でも開けます。メールやチャットで転送されると、どこまで広がるか分かりません。" },
+  { k: "public", icon: "🌐", t: "ウェブ上で一般公開", ring: 3, who: "検索で見つかる可能性があり、世界中の誰でも開けます。" }
+];
+LT.S4.share = function (el) {
+  const box = document.createElement("div");
+  box.className = "card";
+  box.innerHTML = `<h2>もう一つの「うっかり」：共有の設定</h2>
+    <p>クラウドでファイルやアンケートの回答を共有するとき、公開範囲の設定を間違えて、名簿や申込者の情報を誰でも見られる状態にしてしまう事故がくり返し起きています。<b>「2年_保護者連絡先.xlsx」</b>の共有設定を切り替えて、見られる人の範囲を確かめましょう。</p>
+    <div class="grid2">
+      <div class="share-dlg"><div class="share-hd">「2年_保護者連絡先.xlsx」を共有</div>
+        ${LT.S4.SHARE.map((o, i) => `<label class="share-opt"><input type="radio" name="share" value="${i}" ${i === 0 ? "checked" : ""}><span class="share-i">${o.icon}</span><span>${o.t}</span></label>`).join("")}
+      </div>
+      <div><svg viewBox="0 0 300 300" class="chart" id="rings" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,sans-serif"></svg></div>
+    </div>
+    <div id="shareInfo"></div>`;
+  el.appendChild(box);
+  const draw = (i) => {
+    const o = LT.S4.SHARE[i];
+    const rings = [
+      { r: 140, t: "インターネット上の誰でも", n: 3 },
+      { r: 100, t: "リンクを転送された人", n: 2 },
+      { r: 60, t: "招待した人", n: 1 }
+    ];
+    let g = "";
+    rings.forEach(rg => {
+      const lit = o.ring >= rg.n;
+      g += `<circle cx="150" cy="150" r="${rg.r}" fill="${lit ? (rg.n === 1 ? "#e5f0fb" : rg.n === 2 ? "#fff4e0" : "#fdecec") : "#f6f8fc"}" stroke="${lit ? (rg.n === 1 ? "#1565c0" : rg.n === 2 ? "#a35f00" : "#c62828") : "#e2e6ee"}" stroke-width="2"/>`;
+    });
+    rings.forEach(rg => { g += `<text x="150" y="${150 - rg.r + 18}" text-anchor="middle" font-size="11" font-weight="700" fill="${o.ring >= rg.n ? "#18202f" : "#b0b8c6"}">${rg.t}</text>`; });
+    g += `<circle cx="150" cy="150" r="22" fill="#2b5fd9"/><text x="150" y="155" text-anchor="middle" font-size="12" font-weight="800" fill="#fff">ファイル</text>`;
+    box.querySelector("#rings").innerHTML = g;
+    box.querySelector("#shareInfo").innerHTML = `<div class="feedback ${o.ring === 1 ? "ok" : "ng"} mt"><b>${o.icon} ${o.t}</b><br>${o.who}${o.ring > 1 ? "<br>個人情報を含むファイルは、「制限付き」にして必要な人だけを招待します。" : ""}</div>`;
+    LT.log("s4", "see", "share", o.k);
+  };
+  box.querySelectorAll("input[name=share]").forEach(r => r.onchange = () => draw(Number(r.value)));
+  draw(0);
 };
 
 /* ---------- ② 破る（体験）：時間に追われての一斉送信 ---------- */

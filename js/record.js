@@ -2,7 +2,7 @@
 window.LT = window.LT || {};
 
 LT.STORE_KEY = "leaktrace_v1";
-LT.VERSION = "0.4.0";
+LT.VERSION = "0.5.0";
 
 LT.defaultState = function () {
   return {
@@ -212,7 +212,7 @@ LT.exportMarkdown = function () {
   const st = LT.state;
   const layerName = { intro: "導入（中学生〜）", practice: "体験（高校生〜）", inquiry: "探究（大学生〜）" };
   let md = `# LeakTrace 学習記録\n\n`;
-  md += `- 参加者ID: ${st.learnerId}\n- 学習層: ${layerName[st.layer] || st.layer}\n- 記録開始: ${st.createdAt}\n- 書き出し: ${new Date().toISOString()}\n- 教材バージョン: ${st.version}\n\n`;
+  md += `- 参加者ID: ${st.learnerId}\n- 記録開始: ${st.createdAt}\n- 書き出し: ${new Date().toISOString()}\n- 教材バージョン: ${st.version}\n\n`;
   md += `## ステージ進捗\n\n| ステージ | 見る | 破る | なぜ守れるか | 完了 | 所要時間(秒) |\n|---|---|---|---|---|---|\n`;
   LT.summary().forEach(s => {
     const c = v => v ? "✓" : "–";

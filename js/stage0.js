@@ -30,6 +30,52 @@ LT.S0 = {
   ciaDesc: { c: "見てよい人だけが見られること", i: "正しく、勝手に書き換えられていないこと", a: "使いたいときに使えること" }
 };
 
+/* あなたのデータの足あと：一日の場面と、情報を預けている先 */
+LT.S0.DAY = [
+  { time: "7:00", icon: "📱", scene: "スマホでSNSと天気をチェック", holder: "SNSの会社", data: ["名前・ニックネーム", "メールアドレス", "投稿した写真", "位置情報（許可していれば）"] },
+  { time: "8:00", icon: "🚃", scene: "交通系ICカードで通学", holder: "鉄道会社", data: ["乗り降りした駅と時刻", "定期券の名前・年齢"] },
+  { time: "9:00", icon: "🏫", scene: "学校で出席・小テスト", holder: "学校（教育委員会）", data: ["名前・住所・保護者の連絡先", "成績", "健康診断の結果"] },
+  { time: "16:30", icon: "🏪", scene: "コンビニでポイントカードを使う", holder: "ポイントの会社", data: ["買った商品と時刻", "会員番号・生年月日"] },
+  { time: "19:00", icon: "🛒", scene: "家族のアカウントで通販", holder: "通販サイト", data: ["住所・電話番号", "買ったもの", "クレジットカード情報"] },
+  { time: "21:00", icon: "🎮", scene: "ゲームアプリで遊ぶ", holder: "ゲームの会社", data: ["メールアドレス", "課金の記録", "フレンドとのやりとり"] }
+];
+LT.S0.footprint = function (el) {
+  const box = document.createElement("div");
+  box.className = "card";
+  box.innerHTML = `<h2>あなたの「データの足あと」</h2>
+    <p>ある中高生の一日です。場面をタップすると、その時どこに、どんな情報を預けているかが図に加わります。漏えいは、この「預け先」のどこかで起きます。</p>
+    <div class="day" id="day">${LT.S0.DAY.map((d, i) => `<button class="day-item" data-i="${i}"><span class="day-t">${d.time}</span><span class="day-i">${d.icon}</span><span class="day-s">${d.scene}</span></button>`).join("")}</div>
+    <div class="fp-wrap"><svg id="fp" viewBox="0 0 640 340" class="chart" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,sans-serif"></svg></div>
+    <div id="fpInfo" class="small"></div>`;
+  el.appendChild(box);
+  const on = new Set();
+  const draw = () => {
+    const cx = 320, cy = 170, R = 128;
+    let g = "";
+    LT.S0.DAY.forEach((d, i) => {
+      const a = -Math.PI / 2 + i * 2 * Math.PI / LT.S0.DAY.length;
+      const x = cx + R * 1.75 * Math.cos(a) * 0.95, y = cy + R * Math.sin(a);
+      const lit = on.has(i);
+      g += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="${lit ? "#2b5fd9" : "#e2e6ee"}" stroke-width="${lit ? 3 : 1.5}" ${lit ? "" : 'stroke-dasharray="4 5"'}/>`;
+      g += `<g opacity="${lit ? 1 : .35}"><rect x="${x - 70}" y="${y - 24}" width="140" height="48" rx="12" fill="${lit ? "#e8eefc" : "#fff"}" stroke="${lit ? "#2b5fd9" : "#cfd6e2"}" stroke-width="2"/>
+        <text x="${x}" y="${y - 3}" text-anchor="middle" font-size="18">${d.icon}</text><text x="${x}" y="${y + 16}" text-anchor="middle" font-size="12" font-weight="700" fill="#18202f">${d.holder}</text></g>`;
+    });
+    g += `<circle cx="${cx}" cy="${cy}" r="40" fill="#2b5fd9"/><text x="${cx}" y="${cy + 6}" text-anchor="middle" font-size="16" font-weight="800" fill="#fff">あなた</text>`;
+    box.querySelector("#fp").innerHTML = g;
+    const n = on.size, items = [...on].reduce((s, i) => s + LT.S0.DAY[i].data.length, 0);
+    box.querySelector("#fpInfo").innerHTML = n ? `<div class="feedback ok mt"><b>${n}か所</b>に、<b>${items}種類</b>の情報を預けています。${n === LT.S0.DAY.length ? "どこか1か所から漏れても、あなたの情報は外に出てしまいます。だから「預け先」の対策と、「自分の使い方」の両方が大切です。" : "ほかの場面もタップしてみましょう。"}</div>` : "";
+  };
+  box.querySelectorAll(".day-item").forEach(b => b.onclick = () => {
+    const i = Number(b.dataset.i), d = LT.S0.DAY[i];
+    on.add(i); b.classList.add("on");
+    box.querySelectorAll(".day-item .day-d").forEach(x => x.remove());
+    b.insertAdjacentHTML("beforeend", `<span class="day-d">${d.data.map(x => `<span class="chip">${x}</span>`).join("")}</span>`);
+    LT.log("s0", "see", "footprint", i);
+    draw();
+  });
+  draw();
+};
+
 /* ① 数字で見る */
 LT.S0.see = function (el) {
   el.innerHTML = `<div class="card">
@@ -47,6 +93,10 @@ LT.S0.see = function (el) {
   el.querySelector("#chart").innerHTML = `<h3 class="mt">原因別の件数（2025年・上場企業）</h3>
     <div class="hbars">${LT.S0.causes.map(c => `<div class="hbar"><div class="hbar-k">${c.k}<small>${c.stage}で体験</small></div><div class="hbar-track"><div class="hbar-fill" style="width:${c.p / max * 100}%;background:${c.color}"></div><span class="hbar-v">${c.n}件（${c.p}%）</span></div></div>`).join("")}</div>
     <p class="small mt">出典：東京商工リサーチ調べ（上の「事件ファイル」を参照）。この教材では、多い原因から順に体験していきます。</p>`;
+  LT.S0.footprint(el);
+  el.insertAdjacentHTML("beforeend", LT.deeper("統計の数字を読むときの注意", `<p>2022年4月の改正個人情報保護法で、次のような漏えいは個人情報保護委員会への報告と本人への通知が義務になりました。</p>
+    <ul><li>要配慮個人情報（病歴など）が含まれる</li><li>クレジットカード番号など、お金の被害につながるおそれがある</li><li>不正アクセスなど、悪意のある行為による</li><li>1,000人を超える</li></ul>
+    <p class="mb0">それまで公表されなかった事故も数えられるようになったため、件数の増加には「実際に増えた分」と「見えるようになった分」の両方が含まれます。統計を比べるときは、制度の変化にも目を向けましょう。</p>`));
 };
 
 /* ② 仕分ける：これは個人情報？ */
