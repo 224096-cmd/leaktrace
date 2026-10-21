@@ -63,24 +63,35 @@ LT.S1.break = function (el) {
   </div>`;
   const tb = el.querySelector("#leakTable"), xray = el.querySelector("#xray");
   let success = 0, tried = 0;
+  const applyResult = (tr, rc, u) => {
+    tried++;
+    tr.classList.remove("scan");
+    if (u.reuse) { rc.innerHTML = `<span class="badge ng">ログイン成功</span>`; tr.classList.add("hit"); success++; LT.addMapEdge("leak"); LT.addMapEdge("reuse"); }
+    else { rc.innerHTML = `<span class="badge gray">失敗</span>`; }
+    xray.hidden = false;
+    xray.innerHTML = LT.S1.xrayText(tried, success);
+    LT.log("s1", "break", "list_try", { email: u.email, reuse: u.reuse });
+    if (tried === LT.S1.leak.length) LT.S1.breakDone(el, success);
+  };
   const rows = LT.S1.leak.map((u) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `<td>${u.email}</td><td class="mono">${u.pw}</td><td><button class="btn sm attack">試す</button></td><td class="result">—</td>`;
     const btn = tr.querySelector("button"), rc = tr.querySelector(".result");
-    btn.onclick = () => {
-      tried++;
-      if (u.reuse) { rc.innerHTML = `<span class="badge ng">ログイン成功</span>`; success++; LT.addMapEdge("leak"); LT.addMapEdge("reuse"); }
-      else { rc.innerHTML = `<span class="badge gray">失敗（使い回しなし）</span>`; }
-      btn.disabled = true;
-      xray.hidden = false;
-      xray.innerHTML = LT.S1.xrayText(tried, success);
-      LT.log("s1", "break", "list_try", { email: u.email, reuse: u.reuse });
-      if (tried === LT.S1.leak.length) LT.S1.breakDone(el, success);
-    };
+    btn.onclick = () => { btn.disabled = true; applyResult(tr, rc, u); };
     tb.appendChild(tr);
-    return { u, btn };
+    return { u, tr, btn, rc };
   });
-  el.querySelector("#autoAll").onclick = () => { rows.forEach(r => { if (!r.btn.disabled) r.btn.click(); }); };
+  const auto = el.querySelector("#autoAll");
+  auto.onclick = () => {
+    auto.disabled = true;
+    const pending = rows.filter(r => !r.btn.disabled);
+    const gap = LT.mapReduceMotion && LT.mapReduceMotion() ? 0 : 420;
+    pending.forEach((r, i) => setTimeout(() => {
+      r.btn.disabled = true; r.tr.classList.add("scan"); r.rc.innerHTML = '<span class="small">試行中…</span>';
+      setTimeout(() => applyResult(r.tr, r.rc, r.u), gap ? 240 : 0);
+    }, i * gap));
+    LT.log("s1", "break", "auto_all");
+  };
 
   if (!LT.isIntro()) {
     const box = document.createElement("div");

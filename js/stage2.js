@@ -96,8 +96,120 @@ LT.S2.splitHost = function (host) {
   return { reg: labels.slice(-n).join("."), sub: labels.slice(0, -n).join(".") };
 };
 
+/* 没入シミュレーション：スマホに偽SMSが届いてから乗っ取りまでを順に体験する。
+   すべて架空。入力欄は作らず、行動をボタンで選ぶ（本物の情報はどこにも送られない）。 */
+LT.S2.sim = function (el) {
+  const box = document.createElement("div");
+  box.className = "card sim-card";
+  box.innerHTML = `
+    <div class="card-label">体験する</div>
+    <h2>あなたのスマホに、1通のメッセージが届いた</h2>
+    <p class="mb0">これは、2025年に多発した証券口座の乗っ取りを、架空の「ソラ証券」で再現したものです。あなたならどうするか、実際に操作してみましょう。</p>
+    <div class="phone" id="phone"></div>
+    <div class="sim-note" id="simNote"></div>`;
+  el.appendChild(box);
+  const phone = box.querySelector("#phone"), note = box.querySelector("#simNote");
+  let outcome = null;
+  const go = (s) => { LT.log("s2", "sim", "scene", s); render(s); };
+
+  function render(scene) {
+    if (scene === "lock") {
+      phone.className = "phone wall";
+      phone.innerHTML = `
+        <div class="ph-status"><span>9:41</span><span>5G ▮▮▮</span></div>
+        <div class="ph-clock"><div class="ph-time">9:41</div><div class="ph-date">6月12日 木曜日</div></div>
+        <div class="ph-notif pop-in">
+          <div class="pn-top"><span class="pn-app">メッセージ</span><span class="pn-now">今</span></div>
+          <div class="pn-title">ソラ証券</div>
+          <div class="pn-body">【ソラ証券】お客様の口座で不審な取引を検知しました。至急ご確認ください。</div>
+        </div>
+        <button class="ph-tap" id="toMsg">通知をタップして開く</button>`;
+      phone.querySelector("#toMsg").onclick = () => go("msg");
+      note.innerHTML = `<span class="small">通知が届きました。多くの人が、驚いてそのままタップしてしまいます。</span>`;
+    }
+    else if (scene === "msg") {
+      phone.className = "phone app";
+      phone.innerHTML = `
+        <div class="ph-bar"><span class="ph-back">‹</span><b>ソラ証券</b><span></span></div>
+        <div class="ph-thread">
+          <div class="ph-sender">SMS・送信元は確認できません</div>
+          <div class="ph-bubble pop-in">【ソラ証券】お客様の口座で不審な取引を検知しました。取引を制限しています。至急ご本人確認をお願いします。<br><a class="ph-link" id="toSite">https://sora-sec.account-check.com/login</a></div>
+        </div>
+        <div class="ph-choices"><button class="btn attack sm" id="open">リンクを開く</button><button class="btn sm" id="stopMsg">あやしい。開かない</button></div>`;
+      phone.querySelector("#toSite").onclick = phone.querySelector("#open").onclick = () => go("load");
+      phone.querySelector("#stopMsg").onclick = () => { outcome = "safe-early"; go("end"); };
+      note.innerHTML = `<span class="small">リンクのドメインは <b class="mono">account-check.com</b>。ソラ証券の本物（sora-sec.co.jp）とは別です。ここで気づければ一番安全ですが、急いでいると見落としがちです。</span>`;
+    }
+    else if (scene === "load") {
+      phone.className = "phone app";
+      phone.innerHTML = `
+        <div class="ph-urlbar"><span class="ph-lock">🔒</span><span class="ph-url">sora-sec.account-check.com</span></div>
+        <div class="ph-loading"><div class="ph-progress" id="prog"></div></div>
+        <div class="ph-loadmsg">読み込み中…</div>`;
+      setTimeout(() => { phone.querySelector("#prog") && (phone.querySelector("#prog").style.width = "100%"); }, 50);
+      setTimeout(() => go("site"), LT.mapReduceMotion() ? 200 : 1100);
+      note.innerHTML = `<span class="small">鍵マーク（🔒）が付いていますが、これは「通信が暗号化されている」という意味で、「本物のサイト」という意味ではありません。偽サイトにも鍵は付きます。</span>`;
+    }
+    else if (scene === "site") {
+      phone.className = "phone app";
+      phone.innerHTML = `
+        <div class="ph-urlbar"><span class="ph-lock">🔒</span><span class="ph-url" id="urlbar">sora-sec.account-check.com</span></div>
+        <div class="ph-site">
+          <div class="site-logo">🌤 ソラ証券</div>
+          <div class="site-warn">⚠ 24時間以内に確認しないと口座を凍結します</div>
+          <label class="site-field">ログインID<span class="site-input filled">sora_taro</span></label>
+          <label class="site-field">パスワード<span class="site-input filled">••••••••</span></label>
+          <label class="site-field">取引暗証番号<span class="site-input filled">••••</span></label>
+          <button class="site-btn" id="login">ログイン</button>
+          <button class="btn sm ph-cancel" id="stopSite">やっぱり、やめておく</button>
+        </div>`;
+      phone.querySelector("#login").onclick = () => { outcome = "caught"; go("steal"); };
+      phone.querySelector("#stopSite").onclick = () => { outcome = "safe-late"; go("end"); };
+      note.innerHTML = `<span class="small">本物そっくりの画面です。入力欄にはあらかじめ例が入れてあります（あなたの本当の情報は使いません）。<b>「ログイン」を押すと何が起きる</b>か、見てみましょう。</span>`;
+    }
+    else if (scene === "steal") {
+      phone.className = "phone app";
+      phone.innerHTML = `
+        <div class="steal-stage">
+          <div class="steal-you">📱<span>あなた</span></div>
+          <div class="steal-fake">🎭<span>偽サイト</span></div>
+          <div class="steal-real">🏦<span>ソラ証券（本物）</span></div>
+          <div class="steal-att">🕶️<span>攻撃者</span></div>
+          <div class="steal-packet p1">ID・パスワード</div>
+          <div class="steal-packet p2">そのまま中継</div>
+        </div>`;
+      note.innerHTML = `<span class="small">入力した情報は偽サイトから本物のサイトへ<b>その場で中継</b>され、攻撃者がログインします。確認コードを入れても、同じように中継されます。</span>`;
+      setTimeout(() => go("end"), LT.mapReduceMotion() ? 300 : 2400);
+    }
+    else if (scene === "end") {
+      LT.addMapEdge("phish");
+      const win = outcome === "caught";
+      if (win) LT.addMapEdge("cred");
+      LT.setScore("s2.sim", { correct: win ? 0 : 1, total: 1, percent: win ? 0 : 100, note: { "safe-early": "リンクを開かず回避", "safe-late": "入力直前で回避", caught: "乗っ取り成立（体験）" }[outcome] });
+      phone.className = "phone end " + (win ? "bad" : "good");
+      phone.innerHTML = `
+        <div class="ph-result">
+          <div class="pr-icon">${win ? "⚠" : "🛡️"}</div>
+          <div class="pr-title">${win ? "口座が乗っ取られました" : "被害を防げました"}</div>
+          <div class="pr-sub">${win ? "（これはシミュレーションです。本当の被害はありません）" : outcome === "safe-early" ? "リンクを開かなかったのが正解でした。" : "入力する前にやめられたのが正解でした。"}</div>
+          <button class="btn sm" id="again">もう一度ためす</button>
+        </div>`;
+      phone.querySelector("#again").onclick = () => { outcome = null; go("lock"); };
+      note.innerHTML = `<div class="feedback ${win ? "ng" : "ok"} mb0"><b>見破る手がかりは3つ。</b>
+        <ol class="mb0"><li><b>送信元</b>：SMSの差出人名は偽装できる。名前だけで信用しない。</li>
+        <li><b>リンクのドメイン</b>：本当の持ち主は右端に近い部分（ここでは account-check.com）。</li>
+        <li><b>緊急性</b>：「至急」「凍結」で急がされたら、いったん止まる。リンクではなく公式アプリから確かめる。</li></ol></div>`;
+    }
+  }
+  go("lock");
+};
+
 /* ---------- ① 見る ---------- */
 LT.S2.see = function (el) {
+  LT.S2.sim(el);
+  const more = document.createElement("div");
+  el.appendChild(more);
+  el = more;
   el.innerHTML = `
   <div class="card">
     <h2>URLのどこが「本当の住所」か</h2>

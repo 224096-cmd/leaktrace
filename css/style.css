@@ -463,3 +463,95 @@ dl.gloss dd { margin: 2px 0 0; padding-bottom: 12px; border-bottom: 1px solid va
 .edge-list .et { display: flex; flex-direction: column; line-height: 1.5; font-size: .9rem; }
 .edge-list .et small { font-size: .78rem; }
 .edge-list .badge { margin-top: 2px; }
+
+/* ---------- 章立て（1ページで進む） ---------- */
+.chapter-rail { position: sticky; top: 92px; z-index: 18; display: flex; align-items: center; gap: 0; background: rgba(255,255,255,.95); backdrop-filter: blur(6px); border: 1px solid var(--line); border-radius: 999px; padding: 5px 8px; margin-bottom: 22px; box-shadow: 0 2px 10px rgba(20,30,50,.05); }
+.cr { flex: none; display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; font: inherit; font-size: .86rem; color: var(--sub); padding: 6px 12px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+.cr-n { font-family: var(--serif); }
+.cr.on { background: var(--accent-soft); color: var(--accent-ink); font-weight: 700; }
+.cr.done .cr-n { color: var(--ok); }
+.cr-line { flex: 1; height: 1px; background: var(--line); min-width: 8px; }
+@media (max-width: 560px) { .chapter-rail { top: 88px; } .cr-l { display: none; } .cr { padding: 8px 10px; } .cr.on .cr-l { display: inline; } }
+
+.chapter { scroll-margin-top: 150px; }
+.chapter-head { display: flex; align-items: baseline; gap: 12px; margin: 8px 0 14px; }
+.ch-badge { font-family: var(--serif); font-weight: 700; font-size: 1.1rem; padding: 2px 14px; border-radius: 999px; color: #fff; }
+.ch-badge.ch-see { background: #5a6b86; }
+.ch-badge.ch-break { background: var(--attack); }
+.ch-badge.ch-defend { background: var(--accent); }
+.ch-hint { font-size: .86rem; color: var(--sub); }
+.chapter-join { text-align: center; color: var(--line-strong); font-size: 1.6rem; line-height: 1; margin: 2px 0 10px; }
+.chapter-join span { display: inline-block; animation: joinBob 1.8s ease-in-out infinite; }
+@keyframes joinBob { 50% { transform: translateY(5px); } }
+.reveal { opacity: 0; transform: translateY(14px); transition: opacity .5s ease, transform .5s ease; }
+.reveal.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; } .chapter-join span { animation: none; } }
+
+/* ---------- 没入シミュレーション（スマホ） ---------- */
+.sim-card { background: linear-gradient(180deg, #f7f9fd, #fff); }
+.phone { width: 300px; max-width: 100%; margin: 18px auto; aspect-ratio: 9 / 18; background: #0d1220; border-radius: 34px; border: 9px solid #0d1220; box-shadow: 0 10px 34px rgba(13,18,32,.28); position: relative; overflow: hidden; color: #1d2433; font-size: .9rem; }
+.phone::before { content: ""; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 120px; height: 22px; background: #0d1220; border-radius: 0 0 14px 14px; z-index: 5; }
+.phone.wall { background: linear-gradient(160deg, #2c5ec9, #6a3fb5); }
+.phone.app, .phone.end { background: #eef1f6; }
+.ph-status { display: flex; justify-content: space-between; color: #fff; font-size: .72rem; padding: 7px 18px 0; }
+.ph-clock { text-align: center; color: #fff; margin-top: 26px; }
+.ph-time { font-size: 2.8rem; font-weight: 300; letter-spacing: 1px; }
+.ph-date { font-size: .8rem; opacity: .9; }
+.ph-notif { position: absolute; left: 12px; right: 12px; top: 150px; background: rgba(255,255,255,.92); backdrop-filter: blur(8px); border-radius: 16px; padding: 10px 13px; box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+.pn-top { display: flex; justify-content: space-between; font-size: .68rem; color: #5f6b7d; margin-bottom: 2px; }
+.pn-title { font-weight: 700; font-size: .84rem; }
+.pn-body { font-size: .8rem; line-height: 1.5; margin-top: 2px; }
+.ph-tap { position: absolute; left: 0; right: 0; bottom: 18px; margin: 0 auto; width: 80%; background: rgba(255,255,255,.22); color: #fff; border: 1px solid rgba(255,255,255,.4); border-radius: 999px; padding: 10px; font: inherit; font-size: .82rem; cursor: pointer; }
+.ph-tap:hover { background: rgba(255,255,255,.34); }
+.pop-in { animation: popIn .45s cubic-bezier(.2,.9,.3,1.2); }
+@keyframes popIn { from { opacity: 0; transform: translateY(-14px) scale(.96); } to { opacity: 1; transform: none; } }
+.ph-bar, .ph-urlbar { display: flex; align-items: center; gap: 8px; background: #fff; padding: 12px 14px 10px; font-size: .86rem; border-bottom: 1px solid #e2e6ed; margin-top: 18px; }
+.ph-bar b { flex: 1; text-align: center; }
+.ph-back { color: var(--accent); font-size: 1.2rem; }
+.ph-urlbar { gap: 6px; }
+.ph-lock { font-size: .8rem; }
+.ph-url { background: #eef1f6; border-radius: 99px; padding: 4px 12px; font-family: var(--mono); font-size: .74rem; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ph-thread { padding: 14px 12px; }
+.ph-sender { text-align: center; font-size: .68rem; color: #8a94a6; margin-bottom: 10px; }
+.ph-bubble { background: #fff; border: 1px solid #e2e6ed; border-radius: 4px 16px 16px 16px; padding: 11px 13px; font-size: .82rem; line-height: 1.6; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+.ph-link { color: var(--accent); word-break: break-all; cursor: pointer; text-decoration: underline; }
+.ph-choices { position: absolute; left: 12px; right: 12px; bottom: 16px; display: flex; gap: 8px; }
+.ph-choices .btn { flex: 1; min-height: 42px; }
+.ph-loading { height: 3px; background: #dbe0e8; margin-top: 2px; }
+.ph-progress { height: 100%; width: 4%; background: var(--accent); transition: width 1s ease; }
+.ph-loadmsg { text-align: center; color: #8a94a6; font-size: .78rem; margin-top: 20px; }
+.ph-site { padding: 16px 16px 14px; }
+.site-logo { font-weight: 800; font-size: 1.1rem; text-align: center; margin-bottom: 10px; }
+.site-warn { background: #fbefee; color: var(--ng); font-size: .72rem; font-weight: 700; padding: 7px 9px; border-radius: 6px; margin-bottom: 12px; }
+.site-field { display: block; font-size: .72rem; font-weight: 700; color: #5f6b7d; margin-bottom: 9px; }
+.site-input { display: block; margin-top: 3px; background: #fff; border: 1px solid #cdd4df; border-radius: 6px; padding: 8px 10px; font-family: var(--mono); font-size: .82rem; color: #1d2433; }
+.site-btn { width: 100%; background: #e08a1e; color: #fff; border: 0; border-radius: 8px; padding: 11px; font: inherit; font-weight: 800; cursor: pointer; margin-top: 2px; }
+.site-btn:hover { background: #cf7c13; }
+.ph-cancel { width: 100%; margin-top: 8px; }
+.steal-stage { position: absolute; inset: 18px 0 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; place-items: center; gap: 4px; padding: 10px; }
+.steal-stage > div[class^="steal-"]:not([class*="packet"]) { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: .68rem; text-align: center; color: #1d2433; }
+.steal-stage > div[class^="steal-"] { font-size: 1.7rem; }
+.steal-you { grid-area: 1 / 1; } .steal-fake { grid-area: 1 / 2; } .steal-real { grid-area: 2 / 2; } .steal-att { grid-area: 2 / 1; }
+.steal-packet { position: absolute; font-size: .64rem !important; background: var(--ng); color: #fff; padding: 2px 7px; border-radius: 99px; white-space: nowrap; opacity: 0; }
+.steal-packet.p1 { top: 26%; left: 20%; animation: pkt1 2.2s ease forwards; }
+.steal-packet.p2 { top: 50%; right: 14%; animation: pkt2 2.2s ease .7s forwards; }
+@keyframes pkt1 { 0% { opacity: 0; left: 24%; } 20% { opacity: 1; } 80% { opacity: 1; left: 56%; } 100% { opacity: 0; left: 60%; } }
+@keyframes pkt2 { 0% { opacity: 0; top: 34%; } 20% { opacity: 1; } 80% { opacity: 1; top: 62%; } 100% { opacity: 0; top: 66%; } }
+.phone.end { display: grid; place-items: center; }
+.ph-result { text-align: center; padding: 20px; }
+.pr-icon { font-size: 3rem; }
+.phone.end.good .pr-icon { filter: none; }
+.pr-title { font-family: var(--serif); font-weight: 700; font-size: 1.15rem; margin: 8px 0 4px; }
+.phone.end.bad .pr-title { color: var(--ng); }
+.phone.end.good .pr-title { color: var(--ok); }
+.pr-sub { font-size: .78rem; color: #5f6b7d; margin-bottom: 16px; line-height: 1.6; }
+.sim-note { margin-top: 6px; }
+@media (prefers-reduced-motion: reduce) { .pop-in, .steal-packet { animation: none; opacity: 1; } }
+
+/* ---------- リスト型攻撃のスキャン演出 ---------- */
+#leakTable tr.scan { background: #fff6e8; }
+#leakTable tr.scan td { animation: scanPulse .7s ease-in-out infinite; }
+#leakTable tr.hit { background: var(--attack-soft); }
+#leakTable tr.hit td { transition: background .3s; }
+@keyframes scanPulse { 50% { background: #fde8c8; } }
+@media (prefers-reduced-motion: reduce) { #leakTable tr.scan td { animation: none; } }
