@@ -40,13 +40,59 @@ LT.FINAL = {
   ]
 };
 
+/* 漏えいの通知が届いたら */
+LT.FINAL.ACTIONS = [
+  { t: "メールのリンクを開いて、ログインして状況を確かめる", good: false, why: "通知を装った偽メールの可能性があります。リンクは使わず、自分で公式サイトやアプリを開きます。" },
+  { t: "公式アプリやブックマークから自分で開き、お知らせが本物か確かめる", good: true, why: "リンクを使わずに確かめれば、偽の通知にだまされません。" },
+  { t: "同じパスワードを使っているほかのサービスも、パスワードを変える", good: true, why: "使い回しの連鎖（ステージ1）を断ち切るためです。" },
+  { t: "クレジットカードの利用明細に、覚えのない支払いがないか確かめる", good: true, why: "カード情報が漏れていた場合、早く気づけば止められます。" },
+  { t: "メールに返信して、自分のカード番号が漏れていないか確認してもらう", good: false, why: "カード番号をメールで送るのは危険です。本物の会社がメールで番号を聞くことはありません。" },
+  { t: "おかしいと思ったら、家族や先生、消費者ホットライン（188）に相談する", good: true, why: "一人で判断せず相談することで、二次被害を防げます。" }
+];
+LT.FINAL.notice = function (box) {
+  box.innerHTML = `<div class="card">
+    <h2>📩 こんなメールが届いたら？</h2>
+    <div class="mail"><div class="hd"><div class="subj">【重要】個人情報漏えいに関するお知らせとお詫び</div><div><span class="avatar">モ</span>モグモグショップ &lt;info@mogumogu-shop-support.com&gt;</div></div>
+      <div class="bd">いつもご利用ありがとうございます。当社のサーバーが不正アクセスを受け、お客様のお名前、メールアドレス、パスワード等が流出した可能性があります。
+下記より、お客様の情報が含まれるかをご確認ください。
+
+<span class="link">https://mogumogu-shop-support.com/check</span></div></div>
+    <p class="mt"><b>あなたがすること</b>を、あてはまるものすべて選んでください。</p>
+    <div id="acts"></div>
+    <button class="btn primary block mt" id="chk">答え合わせ</button>
+    <div id="nfb"></div></div>`;
+  const acts = box.querySelector("#acts");
+  acts.innerHTML = LT.FINAL.ACTIONS.map((a, i) => `<label class="choice"><input type="checkbox" value="${i}"><span>${a.t}</span></label>`).join("");
+  box.querySelector("#chk").onclick = () => {
+    let correct = 0;
+    const picked = [];
+    LT.$$("label.choice", acts).forEach((l, i) => {
+      const on = l.querySelector("input").checked, a = LT.FINAL.ACTIONS[i];
+      if (on) picked.push(i);
+      if (on === a.good) correct++;
+      l.classList.toggle("correct", a.good);
+      l.classList.toggle("wrong", on && !a.good);
+      l.querySelector("input").disabled = true;
+      l.insertAdjacentHTML("beforeend", `<small class="why">${a.good ? "◯" : "✕"} ${a.why}</small>`);
+    });
+    LT.setScore("final.notice", { correct, total: LT.FINAL.ACTIONS.length, percent: Math.round(correct / LT.FINAL.ACTIONS.length * 100), note: "漏えい通知への対応" });
+    LT.log("final", "", "notice", { picked, correct });
+    box.querySelector("#chk").disabled = true;
+    box.querySelector("#nfb").innerHTML = `<div class="feedback ok mt"><b>${LT.FINAL.ACTIONS.length}つ中 ${correct}つ 正しく判断できました。</b> このメールの送信元は <span class="mono">mogumogu-shop-support.com</span> で、本物の <span class="mono">mogumogu-shop.jp</span> とは別のドメインです。漏えいの報道に便乗した偽の通知かもしれません。本物の通知でも、確認は自分で開いた公式サイトで行います。</div>`;
+  };
+};
+
 LT.routes.final = function (app) {
   LT.startStage("final");
   LT.current.stage = "final";
   app.innerHTML = `
-  <div class="stage-head"><a href="#/home" class="back" aria-label="ホームへ戻る">‹</a><span class="stage-icon">🧭</span><div class="grow"><div class="eyebrow">まとめ</div><h1>最終課題：自分の行動をふり返る</h1></div></div>
-  <div class="card"><p>あなたの普段の行動を選んでください。選ぶと、架空のシナリオ上で何が起こりうるかと、攻撃経路マップのどこにつながるかが表示されます。正解を当てる課題ではありません。自分の「いま」を確かめるものです。</p></div>
+  <div class="stage-head"><a href="#/home" class="back" aria-label="ホームへ戻る">‹</a><span class="stage-icon">🧭</span><div class="grow"><div class="eyebrow">まとめ</div><h1>漏えいの後に</h1><div class="small">通知が届いたら・自分の行動</div></div></div>
+  ${LT.caseCard("final")}
+  <div id="notice"></div>
+  <h2 class="section-title">自分の行動をふり返る</h2>
+  <div class="card"><p class="mb0">あなたの普段の行動を選んでください。選ぶと、架空のシナリオ上で何が起こりうるかと、攻撃経路マップのどこにつながるかが表示されます。正解を当てる課題ではありません。自分の「いま」を確かめるものです。</p></div>
   <div id="qs"></div>`;
+  LT.FINAL.notice(app.querySelector("#notice"));
   const qs = app.querySelector("#qs");
   const answers = {};
   LT.FINAL.questions.forEach(q => {

@@ -50,6 +50,22 @@ LT.S2 = {
       url: "https://soramaii.jp/login",
       display: "soramaii.jp",
       reasons: ["soramail の l（エル）が i（アイ）2つの soramaii にすり替えられている", "一見すると本物のドメインに見える", "ログインを促している"]
+    },
+    {
+      id: "q6", kind: "fake", channel: "sms",
+      from: "ソラ証券",
+      subject: "",
+      body: "【ソラ証券】お客様の口座で不審な取引を検知しました。取引を制限しています。至急ご本人確認をお願いします。",
+      url: "https://sora-sec.account-check.com/login",
+      reasons: ["SMSの送信者名「ソラ証券」は偽装できるので、名前だけでは信用できない", "「不審な取引」「至急」と不安をあおって急がせている", "本当のドメインは account-check.com で、sora-sec は飾り"]
+    },
+    {
+      id: "q7", kind: "real", channel: "sms",
+      from: "ソラ証券",
+      subject: "",
+      body: "【ソラ証券】新しい端末からログインがありました。お心当たりがない場合は、公式アプリからパスワードを変更してください。（このメッセージにリンクはありません）",
+      url: "",
+      reasons: ["リンクがなく、何かを入力させようとしていない", "確認先として、自分で開く公式アプリを案内している", "ログインのお知らせは、乗っ取りに早く気づくための正しい通知"]
     }
   ],
   // 偽メールの構成要素（破るで選ぶ）
@@ -72,6 +88,14 @@ LT.S2 = {
   }
 };
 
+/* 登録ドメイン（本当の持ち主を示す部分）を取り出す。co.jp などの2段の区分に対応（教材用の簡略版） */
+LT.S2.splitHost = function (host) {
+  const labels = host.toLowerCase().split(".");
+  const sld = ["co", "ne", "or", "ac", "go", "ed", "lg", "ad", "gr"];
+  const n = labels.length >= 3 && labels[labels.length - 1] === "jp" && sld.includes(labels[labels.length - 2]) ? 3 : 2;
+  return { reg: labels.slice(-n).join("."), sub: labels.slice(0, -n).join(".") };
+};
+
 /* ---------- ① 見る ---------- */
 LT.S2.see = function (el) {
   el.innerHTML = `
@@ -88,10 +112,8 @@ LT.S2.see = function (el) {
     let m = url.match(/^(https?:\/\/)?([^\/]+)(\/.*)?$/i);
     if (!m) return null;
     const host = m[2].split("@").pop().split(":")[0];
-    const labels = host.split(".");
-    const reg = labels.slice(-2).join("."); // 簡略化：登録ドメインは末尾2ラベル
-    const sub = labels.slice(0, -2).join(".");
-    return { scheme: m[1] || "", host, sub, reg, path: m[3] || "" };
+    const d = LT.S2.splitHost(host);
+    return { scheme: m[1] || "", host, sub: d.sub, reg: d.reg, path: m[3] || "" };
   };
   const render = () => {
     const p = parse(u.value.trim());
@@ -101,6 +123,41 @@ LT.S2.see = function (el) {
     verdict.innerHTML = `このページの本当の持ち主は <b class="mono">${LT.esc(p.reg)}</b> です。${p.sub ? `左側の <span class="mono">${LT.esc(p.sub)}</span> は飾りで、持ち主とは関係ありません。` : ""} ${suspicious ? '<span class="badge ng">本物の会社のドメインか、よく確かめましょう</span>' : ""}`;
   };
   u.oninput = render; render();
+  LT.S2.relay(el);
+};
+
+/* 中継型フィッシングの図（概念）。3つの列：あなた／偽サイト／本物のサイト */
+LT.S2.RELAY = [
+  { from: 0, to: 0, t: "「口座で不審な取引を検知。至急確認を」というSMSが届く", who: "you" },
+  { from: 0, to: 1, t: "リンクを開き、偽サイトでIDとパスワードを入力", who: "you" },
+  { from: 1, to: 2, t: "偽サイトが、入力された内容をすぐに本物のサイトへ入力", who: "fake" },
+  { from: 2, to: 0, t: "本物のサイトが、あなたのスマホに確認コードを送る", who: "real" },
+  { from: 0, to: 1, t: "あなたは確認コードも偽サイトに入力してしまう", who: "you" },
+  { from: 1, to: 2, t: "偽サイトがコードを中継 → 攻撃者のログインが成立", who: "fake", bad: true }
+];
+LT.S2.relay = function (el) {
+  const box = document.createElement("div");
+  box.className = "card";
+  box.innerHTML = `<h2>確認コードがあっても、なぜ乗っ取られたのか</h2>
+    <p>2025年の証券口座乗っ取りでは、${LT.T("ワンタイムパスワード")}（確認コード）を使っていても被害が出ました。偽サイトが、入力された内容をその場で本物のサイトへ送り込む${LT.T("中継型フィッシング")}だったからです。</p>
+    <div class="relay"><div class="relay-cols"><div>📱 あなた</div><div>🎭 偽サイト</div><div>🏦 本物のサイト</div></div><div id="relaySteps"></div></div>
+    <div class="row mt"><button class="btn primary" id="rNext">▶ 1つ進める</button><button class="btn ghost sm" id="rReset">最初から</button></div>
+    <div id="relayEnd"></div>`;
+  el.appendChild(box);
+  let n = 0;
+  const draw = () => {
+    box.querySelector("#relaySteps").innerHTML = LT.S2.RELAY.slice(0, n).map((r, i) => {
+      const l = Math.min(r.from, r.to), w = Math.abs(r.to - r.from);
+      return `<div class="relay-row fade-in"><span class="relay-no">${i + 1}</span><div class="relay-lane">
+        ${w ? `<div class="relay-arrow ${r.bad ? "bad" : ""} ${r.to < r.from ? "rev" : ""}" style="left:${l * 33.3 + 16.6}%;width:${w * 33.3}%"></div>` : `<div class="relay-dot" style="left:${r.from * 33.3 + 16.6}%"></div>`}
+        </div><div class="relay-t ${r.bad ? "bad" : ""}">${r.t}</div></div>`;
+    }).join("");
+    box.querySelector("#rNext").disabled = n >= LT.S2.RELAY.length;
+    box.querySelector("#relayEnd").innerHTML = n >= LT.S2.RELAY.length ? `<div class="feedback ng mt fade-in"><b>ポイント：</b>確認コードは「本物のサイトかどうか」を確かめてくれません。だから、偽サイトに入力すると、コードごと使われてしまいます。どうすれば防げるかは「なぜ守れるか」で確かめます。</div>` : "";
+  };
+  box.querySelector("#rNext").onclick = () => { n++; draw(); if (n === LT.S2.RELAY.length) LT.log("s2", "see", "relay_done"); };
+  box.querySelector("#rReset").onclick = () => { n = 0; draw(); };
+  draw();
 };
 
 /* ---------- ② 破る ---------- */
@@ -150,10 +207,16 @@ LT.S2.selectBlock = function (part, label) {
 
 /* ---------- ③ なぜ守れるか：判別課題（自動採点） ---------- */
 LT.S2.defend = function (el) {
+  const authBox = document.createElement("div");
+  el.appendChild(authBox);
+  LT.S2.auth(authBox);
+  const quizWrap = document.createElement("div");
+  el.appendChild(quizWrap);
+  el = quizWrap;
   el.innerHTML = `
   <div class="card defend">
     <h2><span class="badge defend">防御者</span> 本物・偽物の判別課題</h2>
-    <p>届いたメールが「本物」か「フィッシング（偽物）」かを見分けます。送信元・緊急性・リンクのドメインを確かめましょう。全${LT.S2.samples.length}問、終わると自動採点され、学習記録に残ります。</p>
+    <p>届いたメールやSMSが「本物」か「フィッシング（偽物）」かを見分けます。送信元・緊急性・リンクのドメインを確かめましょう。全${LT.S2.samples.length}問、終わると自動採点され、学習記録に残ります。</p>
     <div id="quiz"></div>
   </div>`;
   const quiz = el.querySelector("#quiz");
@@ -176,11 +239,11 @@ LT.S2.defend = function (el) {
     LT.log("s2", "defend", "quiz_answer", { id: s.id, answer: ans, correct: ok });
     const fb = quiz.querySelector("#fb");
     quiz.querySelectorAll("button[data-a]").forEach(b => b.disabled = true);
-    quiz.querySelector(".mail").outerHTML = LT.S2.mailHTML(s, true);
+    quiz.querySelector(".mail, .sms").outerHTML = LT.S2.mailHTML(s, true);
     const flags = LT.S2.FLAGS[s.id] || [];
-    fb.innerHTML = `<div class="feedback ${ok ? "ok" : "ng"} fade-in"><p><b>${ok ? "正解！" : "おしい！"}</b> これは<b>${s.kind === "real" ? "本物" : "フィッシング（偽物）"}</b>です。${s.kind === "fake" ? "メールの赤い枠と番号が、見抜くための手がかりです。" : ""}</p>
+    fb.innerHTML = `<div class="feedback ${ok ? "ok" : "ng"} fade-in"><p><b>${ok ? "正解！" : "おしい！"}</b> これは<b>${s.kind === "real" ? "本物" : "フィッシング（偽物）"}</b>です。${s.kind === "fake" ? "赤い枠と番号が、見抜くための手がかりです。" : ""}</p>
       <ol class="mb0">${s.reasons.map((r, i) => `<li>${LT.esc(r)}</li>`).join("")}</ol>
-      <p class="small mt mb0">リンクの本当の持ち主：</p>${LT.S2.urlHTML(s.url)}</div>
+      ${s.url ? `<p class="small mt mb0">リンクの本当の持ち主：</p>${LT.S2.urlHTML(s.url)}` : ""}</div>
       <button class="btn primary block mt" id="next">${idx + 1 < items.length ? "次の問題へ ›" : "結果を見る ›"}</button>`;
     fb.querySelector("#next").onclick = () => { idx++; show(); };
     fb.querySelector("#next").scrollIntoView({ block: "nearest", behavior: "smooth" });
@@ -202,19 +265,42 @@ LT.S2.defend = function (el) {
   });
 };
 
+/* 認証方式の比較 */
+LT.S2.AUTH = [
+  { k: "pw", icon: "🔤", name: "パスワードだけ", a: false, b: false, note: "知っている人なら誰でも入れる。" },
+  { k: "otp", icon: "🔢", name: "パスワード＋確認コード", a: true, b: false, note: "パスワードが漏れただけなら止まる。しかし確認コードは本物と偽物を区別しないため、偽サイトに入力すると中継されてしまう。" },
+  { k: "passkey", icon: "👆", name: "パスキー", a: true, b: true, note: "そもそも盗まれるパスワードがない。登録した本物のサイトでしか働かないので、偽サイトでは使えない（フィッシングに強い）。" }
+];
+LT.S2.auth = function (box) {
+  box.innerHTML = `<div class="card defend"><h2><span class="badge defend">防御者</span> だまされても守れる認証はどれ？</h2>
+    <p>${LT.T("パスキー")}は、スマホやPCの指紋・顔認証などでログインする方式です。2025年の事件の後、日本証券業協会はログインなどで「フィッシングに強い多要素認証」（パスキーなど）を必須にする方向でルールを見直しました。</p>
+    <div id="authPred"></div>
+    <div id="authTable" hidden>
+      <div class="auth-grid"><div></div><div class="auth-h">場面A<br><small>別のサービスからパスワードが漏れていた</small></div><div class="auth-h">場面B<br><small>偽サイトに全部入力してしまった</small></div>
+      ${LT.S2.AUTH.map(m => `<div class="auth-m"><span>${m.icon}</span>${m.name}</div><div class="auth-r ${m.a ? "ok" : "ng"}">${m.a ? "🛡️ 止まる" : "⚠ 乗っ取られる"}</div><div class="auth-r ${m.b ? "ok" : "ng"}">${m.b ? "🛡️ 止まる" : "⚠ 乗っ取られる"}</div><div class="auth-note">${m.note}</div>`).join("")}
+      </div>
+      <div class="feedback ok mt"><b>パスキーが使えないサービスでは：</b>メールやSMSのリンクからログインせず、公式アプリやブックマークから開く習慣が、偽サイトに入力しないための一番の守りになります。</div>
+    </div></div>`;
+  LT.prediction(box.querySelector("#authPred"), "s2.auth.pred", "偽サイトに入力してしまった場合でも、乗っ取りを防げる可能性が高いのはどれ？",
+    LT.S2.AUTH.map(m => ({ text: `${m.icon} ${m.name}`, correct: m.k === "passkey" })),
+    "パスキーは本物のサイトとだけ結びついているので、偽サイトでは働きません。確認コードは、入力した先が本物かどうかを確かめてくれません。",
+    (ok) => { box.querySelector("#authTable").hidden = false; LT.setScore("s2.auth", { correct: ok ? 1 : 0, total: 1, percent: ok ? 100 : 0, note: "認証方式の予想" }); });
+  if (LT.state.answers["s2.auth.pred"]) box.querySelector("#authTable").hidden = false;
+};
+
 /* 判別課題の「怪しい箇所」：reasons の順番に対応（from / subject / body / url） */
 LT.S2.FLAGS = {
   q1: ["from", "body", "url"],
   q3: ["url", "body", null],
-  q5: ["from", "url", "body"]
+  q5: ["from", "url", "body"],
+  q6: ["from", "body", "url"]
 };
 
 /* URL を「飾り」と「本当のドメイン」に色分けしたHTML */
 LT.S2.urlHTML = function (url) {
   const m = url.match(/^(https?:\/\/)?([^\/]+)(\/.*)?$/i);
   if (!m) return `<div class="urlbox">${LT.esc(url)}</div>`;
-  const labels = m[2].split(".");
-  const reg = labels.slice(-2).join("."), sub = labels.slice(0, -2).join(".");
+  const { reg, sub } = LT.S2.splitHost(m[2]);
   return `<div class="urlbox"><span class="sch">${LT.esc(m[1] || "")}</span>${sub ? `<span class="subd">${LT.esc(sub)}.</span>` : ""}<span class="dom">${LT.esc(reg)}</span><span class="path">${LT.esc(m[3] || "")}</span></div>`;
 };
 
@@ -224,6 +310,10 @@ LT.S2.mailHTML = function (s, reveal) {
   const mark = (part) => { const n = flags.indexOf(part); return n >= 0 ? { cls: " flag", tag: `<span class="flag-n">${n + 1}</span>` } : { cls: "", tag: "" }; };
   const name = s.from.split("<")[0].trim();
   const f = mark("from"), sb = mark("subject"), b = mark("body"), u = mark("url");
+  if (s.channel === "sms") {
+    return `<div class="sms mt"><div class="sms-hd"><span class="${f.cls}">${LT.esc(s.from)}</span>${f.tag}<small>SMS（ショートメッセージ）</small></div>
+      <div class="sms-bubble"><span class="${b.cls}">${LT.esc(s.body)}</span>${b.tag}${s.url ? `<br><span class="link${u.cls}">${LT.esc(s.url)}</span>${u.tag}` : ""}</div></div>`;
+  }
   return `<div class="mail mt">
     <div class="hd"><div class="subj"><span class="${sb.cls}">${LT.esc(s.subject)}</span>${sb.tag}</div>
       <div><span class="avatar">${LT.esc(name.slice(0, 1))}</span><span class="${f.cls}">${LT.esc(s.from)}</span>${f.tag}</div></div>

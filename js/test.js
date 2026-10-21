@@ -28,12 +28,20 @@ LT.TEST = {
 /* 研究者が用意する問題ファイルを読む（無い・空なら知識問題は省略） */
 LT.loadCustomItems = async function () {
   if (LT.TEST.custom !== null) return LT.TEST.custom;
+  const ok = (it) => it && it.id && it.q && Array.isArray(it.opts) && typeof it.ans === "number";
+  const okP = (it) => it && it.id && (it.kind === "real" || it.kind === "fake") && it.from && it.body;
   try {
     const res = await fetch("data/test-items.json", { cache: "no-cache" });
     const j = await res.json();
-    LT.TEST.custom = Array.isArray(j.items) ? j.items.filter(it => it && it.id && it.q && Array.isArray(it.opts) && typeof it.ans === "number") : [];
-  } catch (e) { LT.TEST.custom = []; }
+    LT.TEST.custom = { items: Array.isArray(j.items) ? j.items.filter(ok) : [], phish: Array.isArray(j.phish) ? j.phish.filter(okP) : [] };
+  } catch (e) { LT.TEST.custom = { items: [], phish: [] }; }
   return LT.TEST.custom;
+};
+
+/* 判別問題の出題元：テスト専用があればそれ、なければステージ2の練習問題 */
+LT.testPhishSet = function () {
+  const c = LT.TEST.custom;
+  return c && c.phish && c.phish.length ? c.phish : LT.S2.samples;
 };
 
 LT.routes.test = async function (app, parts) {
@@ -41,8 +49,8 @@ LT.routes.test = async function (app, parts) {
   const name = phase === "pre" ? "はじめのテスト" : "おわりのテスト";
   const done = LT.state.tests[phase];
   const custom = await LT.loadCustomItems();
-  const phishItems = LT.S2.samples.map(s => ({ id: "ph_" + s.id, cat: "phish", sample: s }));
-  const knowItems = custom.map(it => Object.assign({ cat: it.cat || "know" }, it));
+  const phishItems = LT.testPhishSet().map(s => ({ id: "ph_" + s.id, cat: "phish", sample: s }));
+  const knowItems = custom.items.map(it => Object.assign({ cat: it.cat || "know" }, it));
   const total = knowItems.length + phishItems.length + 2; // +2 は自己評価・行動意図のページ
 
   if (done) { LT.testResult(app, phase); return; }
@@ -53,8 +61,8 @@ LT.routes.test = async function (app, parts) {
     <h1>${name}</h1>
     <p class="muted">${phase === "pre" ? "学習を始める前の、いまの自分を確かめます。" : "学習を終えたあとの自分を確かめます。はじめのテストと比べられます。"}</p>
     <div class="stat-row mt" style="text-align:left">
-      ${knowItems.length ? `<div class="stat"><div class="k">知識問題</div><div class="v">${knowItems.length}問</div></div>` : ""}
-      <div class="stat"><div class="k">メールの判別</div><div class="v">${phishItems.length}問</div></div>
+      ${knowItems.length ? `<div class="stat"><div class="k">知識・判断</div><div class="v">${knowItems.length}問</div></div>` : ""}
+      <div class="stat"><div class="k">メール・SMSの判別</div><div class="v">${phishItems.length}問</div></div>
       <div class="stat"><div class="k">ふり返り</div><div class="v">8問</div></div>
     </div>
     <p class="small mt">${phase === "pre" ? "このテストでは正解は表示されません。分からない問題は「わからない」を選んでください。" : "終わると、はじめのテストとの比較が表示されます。"}</p>
@@ -97,9 +105,8 @@ LT.runTest = function (app, phase, knowItems, phishItems, total) {
 
   const showPhish = (it) => {
     const s = it.sample;
-    const fromName = s.from.split("<")[0].trim();
-    app.innerHTML = `<div class="narrow">${header(idx + 1)}<div class="card"><p class="q"><span class="qnum">Q${idx + 1}</span>このメールは本物？それとも偽物（フィッシング）？</p>
-      <div class="mail"><div class="hd"><div class="subj">${LT.esc(s.subject)}</div><div><span class="avatar">${LT.esc(fromName.slice(0, 1))}</span>${LT.esc(s.from)}</div></div><div class="bd">${LT.esc(s.body)}\n\n<span class="link">${LT.esc(s.url)}</span></div></div>
+    app.innerHTML = `<div class="narrow">${header(idx + 1)}<div class="card"><p class="q"><span class="qnum">Q${idx + 1}</span>この${s.channel === "sms" ? "SMS" : "メール"}は本物？それとも偽物（フィッシング）？</p>
+      ${LT.S2.mailHTML(s, false)}
       <div class="grid3 mt"><button class="btn defend" data-a="real">本物</button><button class="btn attack" data-a="fake">偽物</button><button class="btn" data-a="dunno">わからない</button></div></div></div>`;
     app.querySelectorAll("button[data-a]").forEach(b => b.onclick = () => {
       const a = b.dataset.a;
@@ -157,7 +164,8 @@ LT.testResult = function (app, phase) {
         ${LT.TEST.self.map((s, i) => `<tr><td class="small">${s}</td>${lik("self", i)}</tr>`).join("")}
         ${LT.TEST.intent.map((s, i) => `<tr><td class="small">${s}</td>${lik("intent", i)}</tr>`).join("")}
       </table></div></div>
-      <div class="card"><h2>判別問題の答え合わせ</h2>${LT.S2.samples.map(s => { const it = post.items.find(x => x.id === "ph_" + s.id); return `<p class="mb0"><span class="badge ${it && it.correct ? "ok" : "ng"}">${it && it.correct ? "正解" : "不正解"}</span> ${LT.esc(s.subject)} → <b>${s.kind === "real" ? "本物" : "偽物"}</b></p><p class="small">${s.reasons.map(LT.esc).join("／")}</p>`; }).join("")}</div>
+      ${LT.TEST.custom && LT.TEST.custom.items.length ? `<div class="card"><h2>知識・判断の答え合わせ</h2>${LT.TEST.custom.items.map(q => { const it = post.items.find(x => x.id === q.id); return `<p class="mb0"><span class="badge ${it && it.correct ? "ok" : "ng"}">${it && it.correct ? "正解" : "不正解"}</span> ${LT.esc(q.q)}</p><p class="small">答え：<b>${LT.esc(q.opts[q.ans])}</b>${q.exp ? "　" + LT.esc(q.exp) : ""}</p>`; }).join("")}</div>` : ""}
+      <div class="card"><h2>判別問題の答え合わせ</h2>${LT.testPhishSet().map(s => { const it = post.items.find(x => x.id === "ph_" + s.id); return `<p class="mb0"><span class="badge ${it && it.correct ? "ok" : "ng"}">${it && it.correct ? "正解" : "不正解"}</span> ${LT.esc(s.subject || s.body.slice(0, 24) + "…")} → <b>${s.kind === "real" ? "本物" : "偽物"}</b></p><p class="small">${s.reasons.map(LT.esc).join("／")}</p>`; }).join("")}</div>
       <a class="btn primary lg block" href="#/survey">最後に、使いやすさアンケートへ ›</a></div>`;
   }
   app.innerHTML = body;

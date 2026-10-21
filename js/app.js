@@ -11,12 +11,15 @@ LT.LAYERS = {
 LT.RESEARCH_HASH = "b9ca61ae9d7b56d65901aaaa2bbeb2539a9a93c8231390c84a4c26ff2851360f";
 
 LT.STAGES = [
-  { id: "s1", no: 1, icon: "🔑", color: "#c62828", title: "パスワード", sub: "使い回しの連鎖と総当たり", desc: "流出リストで別サービスに侵入し、多要素認証で止まる様子を確かめる。", route: "#/stage/1", min: 12 },
-  { id: "s2", no: 2, icon: "🎣", color: "#e65100", title: "フィッシング", sub: "偽メールと偽ログイン画面", desc: "URLの読み方を学び、偽メールを組み立て、本物と偽物を見分ける。", route: "#/stage/2", min: 12 },
-  { id: "s3", no: 3, icon: "⛓️", color: "#6a1b9a", title: "侵入の連鎖", sub: "入口から大規模漏えいまで", desc: "1つの侵入が大量流出につながる流れを見て、どこで断ち切れるかを確かめる。", route: "#/stage/3", min: 8 },
-  { id: "s4", no: 4, icon: "✉️", color: "#00695c", title: "人為ミス", sub: "誤送信と共有設定", desc: "攻撃者がいなくても起きる漏えい。確認の手順でミスが減るかを自分で測る。", route: "#/stage/4", min: 10 },
-  { id: "final", no: "★", icon: "🧭", color: "#2b5fd9", title: "最終課題", sub: "自分の行動をふり返る", desc: "普段の行動を選ぶと、架空のシナリオで何が起こるかが攻撃経路マップに表示される。", route: "#/final", min: 5 }
+  { id: "s0", no: 0, icon: "📊", color: "#455a64", title: "漏えいはなぜ起きる？", sub: "統計・個人情報とは・3つの要素", desc: "最近の漏えい事故の数字を読み、何が「個人情報」なのか、守るべき3つの要素は何かを確かめる。", route: "#/stage/0", min: 8,
+    steps: [{ label: "数字で見る", hint: "最近の事故の統計" }, { label: "仕分ける", hint: "これは個人情報？" }, { label: "3つの要素", hint: "何が損なわれる？" }] },
+  { id: "s1", no: 1, icon: "🔑", color: "#c62828", title: "不正ログイン", sub: "パスワードの使い回し", desc: "1か所から漏れたパスワードで、別のサービスに次々と入られる。多要素認証で止まる様子を確かめる。", route: "#/stage/1", min: 12 },
+  { id: "s2", no: 2, icon: "🎣", color: "#e65100", title: "フィッシング", sub: "偽サイトと口座の乗っ取り", desc: "2025年の証券口座乗っ取りと同じ型。偽サイトは確認コードまで中継する。見分け方と、だまされても守れる認証を学ぶ。", route: "#/stage/2", min: 15 },
+  { id: "s3", no: 3, icon: "⛓️", color: "#6a1b9a", title: "ランサムウェア", sub: "委託先から全社停止まで", desc: "委託先のアカウント1つから、権限を奪われ、バックアップまで消されて事業が止まる。どこで断ち切れるかを確かめる。", route: "#/stage/3", min: 12 },
+  { id: "s4", no: 4, icon: "✉️", color: "#00695c", title: "人為ミス", sub: "誤添付と誤送信", desc: "攻撃者がいなくても起きる漏えい。名簿の誤添付やCCの誤用を体験し、確認の手順でミスが減るかを自分で測る。", route: "#/stage/4", min: 12 },
+  { id: "final", no: "★", icon: "🧭", color: "#2b5fd9", title: "漏えいの後に", sub: "通知が届いたら・自分の行動", desc: "漏えいの通知が届いたときの正しい行動と、普段の自分の行動をふり返る。", route: "#/final", min: 8 }
 ];
+LT.stageLabel = (stage) => stage.no === 0 ? "導入" : stage.no === "★" ? "まとめ" : `ステージ ${stage.no} / 4`;
 
 LT.layer = () => LT.state.layer;
 LT.isIntro = () => LT.state.layer === "intro";
@@ -99,7 +102,7 @@ LT.render = function () {
 
   LT.$$("[data-nav]").forEach(a => a.classList.toggle("active", a.dataset.nav === (parts[0] === "stage" || parts[0] === "final" ? "home" : parts[0])));
   const L = LT.LAYERS[LT.state.layer];
-  document.getElementById("layerPill").innerHTML = `${L.icon} ${L.name}層`;
+  document.getElementById("layerPill").innerHTML = `<span>${L.icon}</span><span class="lp-t"> ${L.name}層</span>`;
   const bar = document.getElementById("bottombar");
   bar.hidden = true; bar.innerHTML = "";
   document.body.classList.remove("has-bottombar");
@@ -133,13 +136,14 @@ LT.stageShell = function (app, stage, stepKey, renderers) {
   head.innerHTML = `
     <a href="#/home" class="back" aria-label="ホームへ戻る">‹</a>
     <span class="stage-icon">${stage.icon}</span>
-    <div class="grow"><div class="eyebrow">ステージ ${stage.no} / 4</div><h1>${stage.title}</h1></div>`;
+    <div class="grow"><div class="eyebrow">${LT.stageLabel(stage)}</div><h1>${stage.title}</h1><div class="small">${stage.sub}</div></div>`;
+  const DEF = LT.STEP_DEF.map((d, k) => Object.assign({}, d, stage.steps ? stage.steps[k] : {}));
   app.appendChild(head);
 
   // ステッパー（番号つきの丸と線）
   const steps = document.createElement("nav");
   steps.className = "stepper";
-  steps.innerHTML = LT.STEP_DEF.map((d, k) => `
+  steps.innerHTML = DEF.map((d, k) => `
     <a href="${stage.route}/${d.key}" class="step ${d.cls}${k === i ? " active" : ""}${st.steps[d.key] ? " done" : ""}">
       <span class="dot">${st.steps[d.key] && k !== i ? "✓" : k + 1}</span>
       <span class="lbl"><b>${d.label}</b><small>${d.hint}</small></span>
@@ -150,14 +154,21 @@ LT.stageShell = function (app, stage, stepKey, renderers) {
   body.className = "stage-body";
   app.appendChild(body);
   LT.log(stage.id, stepKey, "view");
-  renderers[stepKey](body);
+  if (stepKey === "see" && LT.CASES[stage.id]) {
+    body.insertAdjacentHTML("beforeend", LT.caseCard(stage.id));
+    const det = body.querySelector("details.case");
+    det.addEventListener("toggle", () => { LT.state.ui.caseClosed = LT.state.ui.caseClosed || {}; LT.state.ui.caseClosed[stage.id] = !det.open; LT.save(); });
+  }
+  const inner = document.createElement("div");
+  body.appendChild(inner);
+  renderers[stepKey](inner);
 
   // 画面下に固定するナビ（タブレットで親指が届く位置）
   const nextIdx = LT.STAGES.findIndex(s => s.id === stage.id) + 1;
   const prevHref = i > 0 ? `${stage.route}/${order[i - 1]}` : "#/home";
-  const prevLabel = i > 0 ? LT.STEP_DEF[i - 1].short : "ホーム";
+  const prevLabel = i > 0 ? DEF[i - 1].label : "ホーム";
   let nextHref, nextLabel;
-  if (i < 2) { nextHref = `${stage.route}/${order[i + 1]}`; nextLabel = `次：${LT.STEP_DEF[i + 1].label}`; }
+  if (i < 2) { nextHref = `${stage.route}/${order[i + 1]}`; nextLabel = `次：${DEF[i + 1].label}`; }
   else if (nextIdx < LT.STAGES.length) { nextHref = LT.STAGES[nextIdx].route; nextLabel = `次のステージ：${LT.STAGES[nextIdx].title}`; }
   else { nextHref = "#/map"; nextLabel = "攻撃経路マップへ"; }
 
@@ -179,7 +190,7 @@ LT.stageShell = function (app, stage, stepKey, renderers) {
 
 /* ステージ完了のお祝い（短く） */
 LT.celebrate = function (stage) {
-  LT.toast(`${stage.icon} ステージ${stage.no}「${stage.title}」クリア！`);
+  LT.toast(`${stage.icon} ${LT.stageLabel(stage).split(" /")[0]}「${stage.title}」クリア！`);
 };
 
 /* 「予想してから答え合わせ」部品 */
@@ -242,61 +253,109 @@ LT.writingTask = function (container, key, prompts) {
 };
 
 /* ---------- ホーム ---------- */
-LT.routes.home = function (app) {
+/* 学習の流れ（順番に並べ、次にやることを示す） */
+LT.flow = function () {
   const sum = LT.summary();
+  const st = (id) => sum.find(x => x.id === id) || {};
+  const items = [{ key: "pre", icon: "📝", title: "はじめのテスト", href: "#/test/pre", done: !!LT.state.tests.pre }];
+  LT.STAGES.forEach(s => {
+    const x = st(s.id);
+    const n = s.id === "final" ? (x.completed ? 1 : 0) : (x.see ? 1 : 0) + (x.break ? 1 : 0) + (x.defend ? 1 : 0);
+    items.push({ key: s.id, icon: s.icon, title: s.title, href: s.route, done: !!x.completed, part: n, total: s.id === "final" ? 1 : 3, stage: s });
+  });
+  items.push({ key: "post", icon: "🏁", title: "おわりのテスト", href: "#/test/post", done: !!LT.state.tests.post });
+  items.push({ key: "survey", icon: "💬", title: "アンケート", href: "#/survey", done: !!LT.state.scores["survey.sus"] });
+  const next = items.find(it => !it.done);
+  return { items, next };
+};
+
+LT.routes.home = function (app) {
   const prog = LT.progress();
   const L = LT.LAYERS[LT.state.layer];
-  const pre = LT.state.scores["test.pre"], post = LT.state.scores["test.post"];
+  const { items, next } = LT.flow();
   const resume = LT.state.lastRoute;
-  const nextStage = LT.STAGES.find(s => !(sum.find(x => x.id === s.id) || {}).completed);
+  const nextStage = next && next.stage;
+  const resumeOk = resume && nextStage && resume.indexOf(nextStage.route) === 0;
+  const cta = !next ? { href: "#/records", label: "学習記録を見る" } :
+    resumeOk ? { href: resume, label: `続きから（${next.title}）` } : { href: next.href, label: next.key === "pre" ? "はじめのテストから始める" : `${next.title} を始める` };
 
   app.innerHTML = `
   <section class="hero">
     <div class="hero-text">
       <div class="eyebrow">${L.icon} ${L.name}層（${L.who}）・ID ${LT.esc(LT.state.learnerId)}</div>
       <h1>なぜ個人情報は漏れるのか。<br>なぜその対策が効くのか。</h1>
-      <p>あなたが<span class="badge attack">攻撃者</span>と<span class="badge defend">防御者</span>の両方になって、漏えいの仕組みを体験し、対策が効く理由を自分の目で確かめます。</p>
-      <div class="row">
-        ${resume && prog.done > 0 ? `<a class="btn primary lg" href="${resume}">▶ 続きから</a>` : `<a class="btn primary lg" href="${pre ? "#/stage/1" : "#/test/pre"}">▶ ${pre ? "ステージ1から始める" : "はじめのテストから始める"}</a>`}
-        <a class="btn ghost" href="#/layer">学習層を変える</a>
-      </div>
+      <p>最近の実際の漏えい事件と同じ「型」の出来事を、架空の会社で再現します。あなたは<span class="badge attack">攻撃者</span>と<span class="badge defend">防御者</span>の両方になって、仕組みと対策の根拠を確かめます。</p>
+      <div class="row"><a class="btn primary lg" href="${cta.href}">▶ ${cta.label}</a><a class="btn ghost" href="#/layer">学習層を変える</a></div>
     </div>
     <div class="hero-ring">${LT.ring(prog.ratio, 132, "var(--accent)")}<div class="small center">${prog.done} / ${prog.total} 段階</div></div>
   </section>
 
-  <section>
-    <h2 class="section-title">ステージ</h2>
-    <div class="stage-list" id="stageList"></div>
-  </section>
+  <h2 class="section-title">学習の流れ</h2>
+  <ol class="flow" id="flow"></ol>
 
-  <section>
-    <h2 class="section-title">テストとふり返り</h2>
-    <div class="tile-row">
-      <a class="tile" href="#/test/pre"><span class="tile-icon">📝</span><div><b>はじめのテスト</b><small>${pre ? `受験済み：${pre.correct}/${pre.total}` : "学習前に受ける（約5分）"}</small></div>${pre ? '<span class="badge ok">済</span>' : '<span class="badge warn">まず受ける</span>'}</a>
-      <a class="tile" href="#/test/post"><span class="tile-icon">🏁</span><div><b>おわりのテスト</b><small>${post ? `受験済み：${post.correct}/${post.total}` : "全ステージの後に受ける"}</small></div>${post ? '<span class="badge ok">済</span>' : ""}</a>
-      <a class="tile" href="#/survey"><span class="tile-icon">💬</span><div><b>使いやすさアンケート</b><small>${LT.state.scores["survey.sus"] ? "回答済み" : "最後に答える（10問）"}</small></div>${LT.state.scores["survey.sus"] ? '<span class="badge ok">済</span>' : ""}</a>
-      <a class="tile" href="#/map"><span class="tile-icon">🗺️</span><div><b>攻撃経路マップ</b><small>通った経路 ${LT.state.map.edges.length} / ${LT.MAP.edges.length}</small></div></a>
-    </div>
-  </section>`;
+  <div class="tile-row mt">
+    <a class="tile" href="#/map"><span class="tile-icon">🗺️</span><div><b>攻撃経路マップ</b><small>通った経路 ${LT.state.map.edges.length} / ${LT.MAP.edges.length}</small></div></a>
+    <a class="tile" href="#/glossary"><span class="tile-icon">📖</span><div><b>用語集</b><small>出てきた言葉を確かめる</small></div></a>
+    <a class="tile" href="#/guide"><span class="tile-icon">👩‍🏫</span><div><b>授業での使い方</b><small>先生向け：時間配分と進め方</small></div></a>
+    <a class="tile" href="#/records"><span class="tile-icon">📋</span><div><b>学習記録</b><small>結果を書き出す</small></div></a>
+  </div>`;
 
-  const list = app.querySelector("#stageList");
-  LT.STAGES.forEach(s => {
-    const ss = sum.find(x => x.id === s.id);
-    const steps = s.id === "final" ? (ss.completed ? 1 : 0) : (ss.see ? 1 : 0) + (ss.break ? 1 : 0) + (ss.defend ? 1 : 0);
-    const total = s.id === "final" ? 1 : 3;
-    const isNext = nextStage && nextStage.id === s.id;
-    const a = document.createElement("a");
-    a.className = "stage-tile" + (ss.completed ? " done" : "") + (isNext ? " next" : "");
-    a.href = s.route;
-    a.style.setProperty("--stage", s.color);
-    a.innerHTML = `
-      <div class="st-top"><span class="stage-icon">${s.icon}</span>
-        <div class="grow"><div class="eyebrow">${s.id === "final" ? "まとめ" : "ステージ " + s.no}・約${s.min}分</div><h3>${s.title}</h3></div>
-        ${ss.completed ? '<span class="badge ok">クリア</span>' : isNext ? '<span class="badge accent">次はここ</span>' : ""}</div>
-      <p class="small">${s.desc}</p>
-      <div class="st-prog"><div class="bar"><div style="width:${steps / total * 100}%"></div></div><span class="small">${steps}/${total}</span></div>`;
-    list.appendChild(a);
+  const ol = app.querySelector("#flow");
+  items.forEach(it => {
+    const li = document.createElement("li");
+    const isNext = next && next.key === it.key;
+    li.className = "flow-item" + (it.done ? " done" : "") + (isNext ? " next" : "") + (it.stage ? " is-stage" : "");
+    if (it.stage) li.style.setProperty("--stage", it.stage.color);
+    const status = it.done ? '<span class="badge ok">済</span>' : isNext ? '<span class="badge accent">次はここ</span>' : "";
+    if (it.stage) {
+      li.innerHTML = `<a href="${it.href}"><span class="flow-dot">${it.done ? "✓" : it.icon}</span>
+        <span class="flow-body"><span class="eyebrow">${LT.stageLabel(it.stage).split(" /")[0]}・約${it.stage.min}分</span><b>${it.stage.title}</b><span class="small">${it.stage.desc}</span>
+        <span class="st-prog"><span class="bar"><span style="width:${it.part / it.total * 100}%"></span></span><span class="small">${it.part}/${it.total}</span></span></span>${status}</a>`;
+    } else {
+      li.innerHTML = `<a href="${it.href}"><span class="flow-dot">${it.done ? "✓" : it.icon}</span><span class="flow-body"><b>${it.title}</b></span>${status}</a>`;
+    }
+    ol.appendChild(li);
   });
+};
+
+/* ---------- 用語集 ---------- */
+LT.routes.glossary = function (app) {
+  const keys = Object.keys(LT.GLOSSARY).sort((a, b) => a.localeCompare(b, "ja"));
+  app.innerHTML = `<h1>用語集</h1><p class="muted">教材に出てくる言葉の意味です。本文中の <span class="term" data-term="用語集">点線の言葉</span> をタップしても表示されます。</p>
+    <input type="text" id="q" placeholder="言葉をさがす（例：パスキー）" class="mb0">
+    <div class="card mt"><dl class="gloss" id="gl"></dl></div>`;
+  const gl = app.querySelector("#gl");
+  const draw = (q) => {
+    gl.innerHTML = keys.filter(k => !q || k.includes(q) || LT.GLOSSARY[k].includes(q)).map(k => `<dt>${k}</dt><dd>${LT.GLOSSARY[k]}</dd>`).join("") || '<p class="muted">見つかりませんでした</p>';
+  };
+  app.querySelector("#q").oninput = (e) => draw(e.target.value.trim());
+  draw("");
+};
+
+/* ---------- 授業での使い方（先生向け） ---------- */
+LT.routes.guide = function (app) {
+  app.innerHTML = `<h1>授業での使い方</h1>
+  <div class="card"><h2>対象と学習層</h2>
+    <div class="table-wrap"><table><tr><th>学習層</th><th>主な対象</th><th>関連する学習内容</th></tr>
+      <tr><td>🌱 導入</td><td>中学生</td><td>技術・家庭（技術分野）「D 情報の技術」：情報セキュリティ、情報モラル</td></tr>
+      <tr><td>🔧 体験</td><td>高校生</td><td>情報Ⅰ「(1) 情報社会の問題解決」：個人情報の保護、情報セキュリティ、関係する法規</td></tr>
+      <tr><td>🔬 探究</td><td>大学生</td><td>情報倫理、情報セキュリティ概論（教養科目など）</td></tr></table></div></div>
+  <div class="card"><h2>時間配分の例（50分×2回）</h2>
+    <div class="table-wrap"><table><tr><th>回</th><th>内容</th><th>目安</th></tr>
+      <tr><td rowspan="4">1回目</td><td>はじめのテスト</td><td>10分</td></tr>
+      <tr><td>導入「漏えいはなぜ起きる？」</td><td>8分</td></tr>
+      <tr><td>ステージ1 不正ログイン</td><td>12分</td></tr>
+      <tr><td>ステージ2 フィッシング</td><td>15分（ステージ1は「見る」「破る」まででも可）</td></tr>
+      <tr><td rowspan="4">2回目</td><td>ステージ3 ランサムウェア</td><td>12分</td></tr>
+      <tr><td>ステージ4 人為ミス</td><td>12分</td></tr>
+      <tr><td>まとめ「漏えいの後に」</td><td>8分</td></tr>
+      <tr><td>おわりのテスト・アンケート</td><td>15分</td></tr></table></div>
+    <p class="small mt">1回（50分）で行う場合は、導入とステージ2・4を中心にし、ほかは「見る」だけにする方法があります。</p></div>
+  <div class="card"><h2>準備と注意</h2><ul>
+    <li>端末：タブレットまたはPCのブラウザ。一度開けば、授業中にネットが切れても動きます。</li>
+    <li>はじめに「はじめに：守るために学ぶ」の画面で、不正アクセス禁止法と、教材の外で試さないことを確認させてください。</li>
+    <li>記録は各端末に保存されます。授業の最後に「学習記録」から書き出して回収してください（端末を共有する場合は書き出し後に消去）。</li>
+    <li>実験で使う場合は、「学習記録」→「実験の設定」で参加者IDを設定してください。</li></ul></div>`;
 };
 
 /* ---------- 倫理と法律の説明 ---------- */
@@ -384,7 +443,7 @@ LT.routes.records = function (app) {
 };
 
 LT.scoreName = function (k) {
-  const map = { "s1.listattack": "S1 リスト型攻撃の成功数", "s2.phish_quiz": "S2 フィッシング判別", "s4.send": "S4 一斉送信（②）", "s4.trial.none": "S4 確認なしの試行", "s4.trial.check": "S4 確認ありの試行", "test.pre": "はじめのテスト", "test.post": "おわりのテスト", "survey.sus": "SUS（使いやすさ）" };
+  const map = { "s0.sort": "S0 個人情報の仕分け", "s0.cia": "S0 3要素の判別", "s2.auth": "S2 認証方式の比較", "s4.attach": "S4 添付ファイルの選択", "final.notice": "最終 通知への対応", "s1.listattack": "S1 リスト型攻撃の成功数", "s2.phish_quiz": "S2 フィッシング判別", "s4.send": "S4 一斉送信（②）", "s4.trial.none": "S4 確認なしの試行", "s4.trial.check": "S4 確認ありの試行", "test.pre": "はじめのテスト", "test.post": "おわりのテスト", "survey.sus": "SUS（使いやすさ）" };
   return map[k] || k;
 };
 

@@ -2,7 +2,7 @@
 window.LT = window.LT || {};
 
 LT.STORE_KEY = "leaktrace_v1";
-LT.VERSION = "0.3.0";
+LT.VERSION = "0.4.0";
 
 LT.defaultState = function () {
   return {
@@ -162,8 +162,8 @@ LT.exportJSON = function () {
 
 LT.summary = function () {
   const st = LT.state;
-  const stages = ["s1", "s2", "s3", "s4", "final"];
-  const names = { s1: "ステージ1 パスワード", s2: "ステージ2 フィッシング", s3: "ステージ3 侵入の連鎖", s4: "ステージ4 人為ミス", final: "最終課題" };
+  const stages = ["s0", "s1", "s2", "s3", "s4", "final"];
+  const names = { s0: "導入 漏えいはなぜ起きる？", s1: "ステージ1 不正ログイン", s2: "ステージ2 フィッシング", s3: "ステージ3 ランサムウェア", s4: "ステージ4 人為ミス", final: "まとめ 漏えいの後に" };
   return stages.map(id => {
     const s = st.stages[id] || { steps: {} };
     return {

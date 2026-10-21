@@ -1,8 +1,8 @@
 /* オフライン対応：一度開いたファイルをブラウザに保存し、ネットに繋がらないときはそれを使う（ネット優先） */
-const CACHE = "leaktrace-v0.3.0";
+const CACHE = "leaktrace-v0.4.0";
 const FILES = [
   "./", "./index.html", "./css/style.css",
-  "./js/glossary.js", "./js/record.js", "./js/map.js", "./js/stage1.js", "./js/stage2.js",
+  "./js/glossary.js", "./js/record.js", "./js/cases.js", "./js/map.js", "./js/stage0.js", "./js/stage1.js", "./js/stage2.js",
   "./js/stage3.js", "./js/stage4.js", "./js/final.js", "./js/test.js", "./js/survey.js", "./js/app.js", "./js/worker-crack.js", "./data/test-items.json"
 ];
 self.addEventListener("install", (e) => {

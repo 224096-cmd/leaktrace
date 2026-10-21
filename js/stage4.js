@@ -5,11 +5,17 @@ LT.STAGE_IMPL = LT.STAGE_IMPL || {};
 
 LT.S4 = {
   recipients: [
-    { email: "a-tanaka@soramail.jp", name: "田中（社内）", ext: false },
-    { email: "sato@soramail.jp", name: "佐藤（社内）", ext: false },
-    { email: "customer1@example.com", name: "顧客A（社外）", ext: true },
-    { email: "customer2@example.net", name: "顧客B（社外）", ext: true },
-    { email: "customer3@example.org", name: "顧客C（社外）", ext: true }
+    { email: "hogosha.aoki@example.com", name: "青木さん（保護者）", ext: true },
+    { email: "inoue-family@example.net", name: "井上さん（保護者）", ext: true },
+    { email: "u.kimura@example.org", name: "木村さん（保護者）", ext: true },
+    { email: "sasaki.home@example.jp", name: "佐々木さん（保護者）", ext: true },
+    { email: "shunin@sora-jh.ed.jp", name: "学年主任（校内）", ext: false }
+  ],
+  files: [
+    { name: "2年_学年だより_6月号.pdf", icon: "📄", kind: "ok", meta: "PDF・1ページ・きのう作成" },
+    { name: "2年_名簿_クラス編成用.xlsx", icon: "📊", kind: "leak", meta: "Excel・成績や家庭の様子の記述あり・きのう更新" },
+    { name: "2年_学年だより_5月号.pdf", icon: "📄", kind: "old", meta: "PDF・1ページ・先月作成" },
+    { name: "2年_成績一覧_1学期.xlsx", icon: "📊", kind: "leak", meta: "Excel・全員の点数・きのう更新" }
   ]
 };
 
@@ -18,53 +24,68 @@ LT.S4.see = function (el) {
   el.innerHTML = `
   <div class="card">
     <h2>攻撃者がいなくても、情報は漏れる</h2>
-    <p>漏えいの約3割は、${LT.T("フィッシング")}や侵入ではなく、送る人自身の<b>うっかりミス</b>です。代表例が${LT.T("CC")}と${LT.T("BCC")}の取り違えと、${LT.T("共有リンク")}の公開範囲ミスです。</p>
+    <p>漏えいの約3割は、送る人自身の<b>うっかりミス</b>です。メールでは、特に次の2つが多く起きています。</p>
     <div class="grid2">
-      <div class="card note mb0"><h4>CC で顧客5人に一斉送信</h4><p class="small">受信者全員に、他の4人のメールアドレスが丸見えになる。「誰が顧客か」という情報が漏れる。</p><div class="mono small">To: customer1@…, customer2@…, customer3@… ← 全員に見える</div></div>
-      <div class="card ok mb0"><h4>BCC で送れば</h4><p class="small">各受信者からは、他の宛先が見えない。</p><div class="mono small">Bcc: （各自からは自分以外見えない）</div></div>
+      <div class="card note mb0"><h4>① 添付ファイルの取り違え</h4><p class="small mb0">名前の似たファイルを選んでしまう。上の事件ファイルでは、学年だよりのつもりで、成績や家庭環境まで書かれた名簿を添付してしまった。</p></div>
+      <div class="card note mb0"><h4>② ${LT.T("CC")}と${LT.T("BCC")}の取り違え</h4><p class="small mb0">CCに入れた宛先は受信者全員に見える。保護者どうしや顧客どうしに、互いのメールアドレスが知られてしまう。</p></div>
     </div>
   </div>`;
-  LT.prediction(el, "s4.see.pred", "顧客5人へ同じ案内メールを送ります。全員のアドレスをCC欄に入れて送ると、何が起きる？",
-    [{ text: "問題ない。宛先は自分にしか見えない" }, { text: "受信した5人全員に、他の4人のメールアドレスが見えてしまう", correct: true }, { text: "メールが届かない" }],
-    "CCは受信者全員に宛先が見えます。顧客どうしが互いのアドレスを知ってしまうのは、立派な個人情報の漏えいです。BCCを使えば防げます。");
+  LT.prediction(el, "s4.see.pred", "保護者30人へ同じお知らせを送ります。全員のアドレスをCC欄に入れて送ると、何が起きる？",
+    [{ text: "問題ない。宛先は送った自分にしか見えない" }, { text: "受け取った30人全員に、ほかの29人のメールアドレスが見えてしまう", correct: true }, { text: "メールが届かない" }],
+    "CCは受信者全員に宛先が見えます。メールアドレスも、誰の保護者かが分かれば個人情報です。互いに見せない場合はBCCを使います。");
 };
 
-/* ---------- ② 破る：時間制限つき模擬業務 ---------- */
+/* ---------- ② 破る（体験）：時間に追われての一斉送信 ---------- */
 LT.S4.break = function (el) {
+  const files = LT.shuffle(LT.S4.files);
   el.innerHTML = `
   <div class="card attack">
-    <h2><span class="badge warn">体験</span> いそがしい中での送信</h2>
-    <p>あなたは窓口担当です。「顧客5人に、他の人のアドレスが見えない形で、至急この案内を送って」と頼まれました。時間は限られています。宛先の種類（To/Cc/Bcc）を選んで送信してください。</p>
-    <div class="spread"><div class="timer" id="timer">20.0</div><span class="small">急かされると確認がおろそかになりがちです</span></div>
-    <div id="form" class="mt"></div>
+    <h2><span class="badge warn">体験</span> 終業前の、いそがしい一斉送信</h2>
+    <p>あなたは架空の「そら中学校」の先生です。会議の合間に「<b>2年生の保護者へ、6月号の学年だよりを送っておいて。保護者どうしのアドレスは見えないように。学年主任にも写しを</b>」と頼まれました。次の会議まであと少しです。</p>
+    <div class="spread"><div class="timer" id="timer">25.0</div><span class="small">急かされると確認がおろそかになりがちです</span></div>
+    <div class="mailer mt" id="form">
+      <div class="mailer-row"><b>添付</b><div class="file-pick" id="files">${files.map((f, i) => `<label class="file"><input type="radio" name="file" value="${LT.S4.files.indexOf(f)}"><span class="file-icon">${f.icon}</span><span><span class="file-name">${f.name}</span><small>${f.meta}</small></span></label>`).join("")}</div></div>
+      <div class="table-wrap"><table><tr><th>宛先</th><th>To</th><th>Cc</th><th>Bcc</th></tr>
+      ${LT.S4.recipients.map((r, i) => `<tr><td class="small">${r.email}<br><span class="muted">${r.name}</span></td>
+        <td><input type="radio" name="r${i}" value="to" checked></td><td><input type="radio" name="r${i}" value="cc"></td><td><input type="radio" name="r${i}" value="bcc"></td></tr>`).join("")}
+      </table></div>
+      <button class="btn attack block mt" id="send">送信する</button>
+    </div>
+    <div id="result"></div>
   </div>`;
   const form = el.querySelector("#form"), timerEl = el.querySelector("#timer");
-  let t = 20.0, done = false;
-  const timer = setInterval(() => { t -= 0.1; if (t <= 0) { t = 0; clearInterval(timer); if (!done) submit(true); } timerEl.textContent = t.toFixed(1); timerEl.classList.toggle("low", t < 7); }, 100);
+  let t = 25.0, done = false;
+  const timer = setInterval(() => { t -= 0.1; if (t <= 0) { t = 0; clearInterval(timer); if (!done) submit(true); } timerEl.textContent = t.toFixed(1); timerEl.classList.toggle("low", t < 8); }, 100);
   window.addEventListener("hashchange", () => { done = true; clearInterval(timer); }, { once: true });
-
-  form.innerHTML = `<div class="table-wrap"><table><tr><th>宛先</th><th>区分</th><th>To</th><th>Cc</th><th>Bcc</th></tr>
-    ${LT.S4.recipients.map((r, i) => `<tr><td class="small">${r.email}<br><span class="muted">${r.name}</span></td><td>${r.ext ? '<span class="badge warn">社外</span>' : '<span class="badge gray">社内</span>'}</td>
-      <td><input type="radio" name="r${i}" value="to" checked></td><td><input type="radio" name="r${i}" value="cc"></td><td><input type="radio" name="r${i}" value="bcc"></td></tr>`).join("")}
-  </table></div><button class="btn attack block mt" id="send">送信する</button>`;
   form.querySelector("#send").onclick = () => submit(false);
 
   function submit(timeout) {
     if (done) return; done = true; clearInterval(timer);
-    const picks = LT.S4.recipients.map((r, i) => (form.querySelector(`input[name=r${i}]:checked`) || {}).value || "none");
-    const extVisible = picks.filter((p, i) => LT.S4.recipients[i].ext && (p === "to" || p === "cc")).length;
-    const leaked = extVisible >= 2; // 社外の宛先が2件以上To/Ccで相互に見える
-    LT.setScore("s4.send", { correct: leaked ? 0 : 1, total: 1, percent: leaked ? 0 : 100, note: leaked ? "社外アドレスが相互に露出（漏えい）" : "BCCで保護" });
-    LT.log("s4", "break", "send", { picks, timeout, leaked });
-    const d = document.createElement("div"); d.className = `card ${leaked ? "note" : "ok"} fade-in`;
-    if (leaked) { LT.addMapEdge("missend"); d.innerHTML = `<h3><span class="badge ng">漏えい発生</span></h3><p>社外の顧客どうしに、互いのメールアドレスが見えてしまいました${timeout ? "（時間切れで既定のまま送信）" : ""}。これは実際に何度も起きている事故です。</p>`; }
-    else d.innerHTML = `<h3><span class="badge ok">保護できた</span></h3><p>社外の宛先はBCCにしたので、顧客どうしにアドレスは見えません。${timeout ? "" : ""}よい判断です。</p>`;
-    el.querySelector(".card.attack").appendChild(d);
+    const picks = LT.S4.recipients.map((r, i) => (form.querySelector(`input[name=r${i}]:checked`) || {}).value || "to");
+    const fsel = form.querySelector("input[name=file]:checked");
+    const file = fsel ? LT.S4.files[Number(fsel.value)] : null;
+    const extVisible = picks.filter((p, i) => LT.S4.recipients[i].ext && p !== "bcc").length;
+    const addrLeak = extVisible >= 2;
+    const fileLeak = file && file.kind === "leak";
+    const problems = [];
+    if (fileLeak) problems.push(`<li><b>添付ファイルの取り違え：</b>「${file.name}」を保護者全員に送ってしまった。成績や家庭の情報が漏れる、最も重い事故です。</li>`);
+    if (addrLeak) problems.push(`<li><b>宛先の取り違え：</b>保護者${extVisible}人のメールアドレスが、互いに見えてしまった。</li>`);
+    if (file && file.kind === "old") problems.push(`<li><b>古い資料：</b>5月号を送ってしまった（漏えいではないが、訂正の連絡が必要）。</li>`);
+    if (!file) problems.push(`<li><b>添付なし：</b>学年だよりを付け忘れた${timeout ? "（時間切れ）" : ""}。</li>`);
+    const leaked = fileLeak || addrLeak;
+    LT.setScore("s4.send", { correct: leaked ? 0 : 1, total: 1, percent: leaked ? 0 : 100, note: leaked ? "漏えい発生" : "漏えいなし" });
+    LT.setScore("s4.attach", { correct: file && file.kind === "ok" ? 1 : 0, total: 1, percent: file && file.kind === "ok" ? 100 : 0, note: file ? file.name : "添付なし" });
+    LT.log("s4", "break", "send", { picks, file: file ? file.name : "", timeout, addrLeak, fileLeak, seconds: Math.round((25 - t) * 10) / 10 });
+    if (addrLeak) LT.addMapEdge("missend");
+    if (fileLeak) LT.addMapEdge("attach");
+    el.querySelector("#result").innerHTML = `<div class="feedback ${leaked ? "ng" : "ok"} mt fade-in">
+      <b>${leaked ? "⚠ 漏えいが発生しました" : problems.length ? "漏えいはありませんが、ミスがありました" : "✓ 依頼どおりに送れました"}</b>${timeout ? "（時間切れで、その時点の内容のまま送信）" : ""}
+      ${problems.length ? `<ul class="mb0">${problems.join("")}</ul>` : `<p class="mb0">6月号を選び、保護者はBCCにできました。よい確認です。</p>`}</div>
+      <p class="small mt">実際の事件でも、送った後で受け取った人からの指摘で気づき、「開かずに削除してください」とお願いすることになりました。一度送ったメールは取り消せません。</p>`;
     form.querySelectorAll("input,button").forEach(x => x.disabled = true);
   }
 };
 
-/* ---------- ③ なぜ守れるか：確認手順で繰り返し実測 ---------- */
 /* ---------- ③ なぜ守れるか：自分で試行して測る ---------- */
 LT.S4.TASKS = [
   { hide: true,  text: "社外の顧客3人に、セールの案内を送る。<b>顧客どうしにはアドレスを見せない。</b>",

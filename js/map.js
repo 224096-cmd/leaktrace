@@ -8,6 +8,7 @@ LT.MAP = {
     attacker: { x: 90,  y: 230, label: "攻撃者", kind: "attacker" },
     shop:     { x: 300, y: 70,  label: "モグモグショップ\n（情報が流出した通販）", kind: "ext" },
     you:      { x: 300, y: 390, label: "あなた\n（社員）", kind: "person" },
+    vendor:   { x: 300, y: 235, label: "委託先\n（管理者アカウント）", kind: "ext" },
     mail:     { x: 520, y: 150, label: "SoraMail\n（会社のメール）", kind: "sys" },
     vpn:      { x: 520, y: 300, label: "VPN機器\n（社外からの入口）", kind: "sys" },
     pc:       { x: 700, y: 300, label: "社内PC", kind: "sys" },
@@ -20,17 +21,19 @@ LT.MAP = {
     { id: "reuse",  from: "attacker", to: "mail", stage: "s1", label: "使い回しでログイン", cutBy: "mfa" },
     { id: "phish",  from: "attacker", to: "you", stage: "s2", label: "偽メール" },
     { id: "cred",   from: "you", to: "mail", stage: "s2", label: "偽画面に入力した情報", cutBy: "mfa" },
-    { id: "vpn",    from: "attacker", to: "vpn", stage: "s3", label: "古い機器の穴から侵入", cutBy: "patch" },
+    { id: "vendor", from: "attacker", to: "vendor", stage: "s3", label: "委託先のID・パスワードを盗む" },
+    { id: "vpn",    from: "vendor", to: "vpn", stage: "s3", label: "多要素認証なしでログイン", cutBy: "mfa" },
+    { id: "vpnhole",from: "attacker", to: "vpn", stage: "s3", label: "古い機器の弱点から侵入", cutBy: "patch" },
     { id: "mail2pc",from: "mail", to: "pc", stage: "s3", label: "メールから社内へ", cutBy: "least" },
     { id: "lateral",from: "vpn", to: "pc", stage: "s3", label: "社内を探索", cutBy: "segment" },
     { id: "priv",   from: "pc", to: "admin", stage: "s3", label: "権限を奪う", cutBy: "least" },
     { id: "dbget",  from: "admin", to: "db", stage: "s3", label: "全件取り出し", cutBy: "least" },
-    { id: "exfil",  from: "db", to: "attacker", stage: "s3", label: "持ち出し・暗号化・脅迫", cutBy: "backup" },
-    { id: "missend",from: "you", to: "pub", stage: "s4", label: "誤送信（CC）", cutBy: "check" },
-    { id: "share",  from: "db", to: "pub", stage: "s4", label: "共有リンクの公開設定ミス", cutBy: "check" }
+    { id: "exfil",  from: "db", to: "attacker", stage: "s3", label: "持ち出し・暗号化・脅迫", cutBy: "monitor" },
+    { id: "missend",from: "mail", to: "pub", stage: "s4", label: "誤送信（CC）", cutBy: "check" },
+    { id: "attach", from: "you", to: "pub", stage: "s4", label: "名簿の誤添付", cutBy: "check" }
   ],
   defenses: {
-    mfa: "多要素認証", patch: "機器の更新（パッチ）", segment: "ネットワーク分離", least: "最小権限", backup: "バックアップ・ログ監視", check: "宛先・公開範囲の確認"
+    mfa: "多要素認証", patch: "機器の更新（パッチ）", segment: "ネットワーク分離", least: "最小権限", monitor: "ログ監視", check: "送信前の確認"
   },
   stageColor: { s1: "#c62828", s2: "#e65100", s3: "#6a1b9a", s4: "#00695c" }
 };
