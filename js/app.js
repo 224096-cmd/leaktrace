@@ -11,15 +11,16 @@ LT.LAYERS = {
 LT.RESEARCH_HASH = "b9ca61ae9d7b56d65901aaaa2bbeb2539a9a93c8231390c84a4c26ff2851360f";
 
 LT.STAGES = [
-  { id: "s0", no: 0, icon: "📊", color: "#455a64", title: "漏えいはなぜ起きる？", sub: "統計・個人情報とは・3つの要素", desc: "最近の漏えい事故の数字を読み、何が「個人情報」なのか、守るべき3つの要素は何かを確かめる。", route: "#/stage/0", min: 8,
+  { id: "s0", tags: ["統計","個人情報とは","3つの要素"], no: 0, icon: "📊", color: "#455a64", title: "漏えいはなぜ起きる？", sub: "統計・個人情報とは・3つの要素", desc: "最近の漏えい事故の数字を読み、何が「個人情報」なのか、守るべき3つの要素は何かを確かめる。", route: "#/stage/0", min: 8,
     steps: [{ label: "数字で見る", hint: "最近の事故の統計" }, { label: "仕分ける", hint: "これは個人情報？" }, { label: "3つの要素", hint: "何が損なわれる？" }] },
-  { id: "s1", no: 1, icon: "🔑", color: "#c62828", title: "不正ログイン", sub: "パスワードの使い回し", desc: "1か所から漏れたパスワードで、別のサービスに次々と入られる。多要素認証で止まる様子を確かめる。", route: "#/stage/1", min: 12 },
-  { id: "s2", no: 2, icon: "🎣", color: "#e65100", title: "フィッシング", sub: "偽サイトと口座の乗っ取り", desc: "2025年の証券口座乗っ取りと同じ型。偽サイトは確認コードまで中継する。見分け方と、だまされても守れる認証を学ぶ。", route: "#/stage/2", min: 15 },
-  { id: "s3", no: 3, icon: "⛓️", color: "#6a1b9a", title: "ランサムウェア", sub: "委託先から全社停止まで", desc: "委託先のアカウント1つから、権限を奪われ、バックアップまで消されて事業が止まる。どこで断ち切れるかを確かめる。", route: "#/stage/3", min: 12 },
-  { id: "s4", no: 4, icon: "✉️", color: "#00695c", title: "人為ミス", sub: "誤添付と誤送信", desc: "攻撃者がいなくても起きる漏えい。名簿の誤添付やCCの誤用を体験し、確認の手順でミスが減るかを自分で測る。", route: "#/stage/4", min: 12 },
-  { id: "final", no: "★", icon: "🧭", color: "#2b5fd9", title: "漏えいの後に", sub: "通知が届いたら・自分の行動", desc: "漏えいの通知が届いたときの正しい行動と、普段の自分の行動をふり返る。", route: "#/final", min: 8 }
+  { id: "s1", tags: ["使い回し","多要素認証"], no: 1, icon: "🔑", color: "#c62828", title: "不正ログイン", sub: "パスワードの使い回し", desc: "1か所から漏れたパスワードで、別のサービスに次々と入られる。多要素認証で止まる様子を確かめる。", route: "#/stage/1", min: 12 },
+  { id: "s2", tags: ["偽サイト","SMS","パスキー"], no: 2, icon: "🎣", color: "#e65100", title: "フィッシング", sub: "偽サイトと口座の乗っ取り", desc: "2025年の証券口座乗っ取りと同じ型。偽サイトは確認コードまで中継する。見分け方と、だまされても守れる認証を学ぶ。", route: "#/stage/2", min: 15 },
+  { id: "s3", tags: ["委託先","バックアップ","多層防御"], no: 3, icon: "⛓️", color: "#6a1b9a", title: "ランサムウェア", sub: "委託先から全社停止まで", desc: "委託先のアカウント1つから、権限を奪われ、バックアップまで消されて事業が止まる。どこで断ち切れるかを確かめる。", route: "#/stage/3", min: 12 },
+  { id: "s4", tags: ["誤添付","BCC","共有設定"], no: 4, icon: "✉️", color: "#00695c", title: "人為ミス", sub: "誤添付と誤送信", desc: "攻撃者がいなくても起きる漏えい。名簿の誤添付やCCの誤用を体験し、確認の手順でミスが減るかを自分で測る。", route: "#/stage/4", min: 12 },
+  { id: "final", tags: ["通知への対応","ふり返り"], no: "★", icon: "🧭", color: "#2b5fd9", title: "漏えいの後に", sub: "通知が届いたら・自分の行動", desc: "漏えいの通知が届いたときの正しい行動と、普段の自分の行動をふり返る。", route: "#/final", min: 8 }
 ];
-LT.stageLabel = (stage) => stage.no === 0 ? "導入" : stage.no === "★" ? "まとめ" : `ステージ ${stage.no} / 4`;
+LT.stageLabel = (stage) => stage.no === 0 ? "導入" : stage.no === "★" ? "まとめ" : `Stage ${stage.no}`;
+LT.tagsHTML = (tags) => `<div class="tags">${(tags || []).map(t => `<span class="tag">${t}</span>`).join("")}</div>`;
 
 LT.layer = () => LT.state.layer;
 /* 学習層は廃止し、全員が同じ内容を学ぶ（発展内容は「もっと深く」で開く） */
@@ -28,7 +29,7 @@ LT.isInquiry = () => false;
 
 /* 「もっと深く」：大学生や、興味のある人向けの発展内容（開くと読める） */
 LT.deeper = function (title, html) {
-  return `<details class="deeper"><summary>🔎 もっと深く：${title}</summary><div class="deeper-body">${html}</div></details>`;
+  return `<details class="deeper"><summary>もっと深く：${title}</summary><div class="deeper-body">${html}</div></details>`;
 };
 
 LT.$ = (sel, root) => (root || document).querySelector(sel);
@@ -106,7 +107,8 @@ LT.render = function () {
 
   if (parts[0] === "stage" || parts[0] === "final") { LT.state.lastRoute = hash; LT.save(); }
 
-  LT.$$("[data-nav]").forEach(a => a.classList.toggle("active", a.dataset.nav === (parts[0] === "stage" || parts[0] === "final" ? "home" : parts[0])));
+  const navKey = parts[0] === "stage" ? "s" + parts[1] : parts[0];
+  LT.$$("[data-nav]").forEach(a => a.classList.toggle("active", a.dataset.nav === navKey));
   const bar = document.getElementById("bottombar");
   bar.hidden = true; bar.innerHTML = "";
   document.body.classList.remove("has-bottombar");
@@ -136,22 +138,16 @@ LT.stageShell = function (app, stage, stepKey, renderers) {
 
   const head = document.createElement("div");
   head.className = "stage-head";
-  head.style.setProperty("--stage", stage.color);
-  head.innerHTML = `
-    <a href="#/home" class="back" aria-label="ホームへ戻る">‹</a>
-    <span class="stage-icon">${stage.icon}</span>
-    <div class="grow"><div class="eyebrow">${LT.stageLabel(stage)}</div><h1>${stage.title}</h1><div class="small">${stage.sub}</div></div>`;
+  head.innerHTML = `<div class="kicker">${LT.stageLabel(stage)}</div>
+    <h1>${stage.title}<span class="h-sub"> — ${stage.sub}</span></h1>${LT.tagsHTML(stage.tags)}`;
   const DEF = LT.STEP_DEF.map((d, k) => Object.assign({}, d, stage.steps ? stage.steps[k] : {}));
   app.appendChild(head);
 
-  // ステッパー（番号つきの丸と線）
+  // 3段階のタブ
   const steps = document.createElement("nav");
-  steps.className = "stepper";
-  steps.innerHTML = DEF.map((d, k) => `
-    <a href="${stage.route}/${d.key}" class="step ${d.cls}${k === i ? " active" : ""}${st.steps[d.key] ? " done" : ""}">
-      <span class="dot">${st.steps[d.key] && k !== i ? "✓" : k + 1}</span>
-      <span class="lbl"><b>${d.label}</b><small>${d.hint}</small></span>
-    </a>${k < 2 ? '<span class="line"></span>' : ""}`).join("");
+  steps.className = "tabs";
+  steps.innerHTML = DEF.map((d, k) => `<a href="${stage.route}/${d.key}" class="tab${k === i ? " active" : ""}${st.steps[d.key] ? " done" : ""}">
+      <span class="tab-n">${"①②③"[k]}</span><span class="tab-l">${d.label}</span><span class="tab-h">${d.hint}</span>${st.steps[d.key] ? '<span class="tab-ok">✓</span>' : ""}</a>`).join("");
   app.appendChild(steps);
 
   const body = document.createElement("div");
@@ -161,7 +157,7 @@ LT.stageShell = function (app, stage, stepKey, renderers) {
   if (stepKey === "see" && LT.CASES[stage.id]) {
     body.insertAdjacentHTML("beforeend", LT.caseCard(stage.id));
     const det = body.querySelector("details.case");
-    det.addEventListener("toggle", () => { LT.state.ui.caseClosed = LT.state.ui.caseClosed || {}; LT.state.ui.caseClosed[stage.id] = !det.open; LT.save(); });
+    det.addEventListener("toggle", () => { LT.state.ui.caseOpen = LT.state.ui.caseOpen || {}; LT.state.ui.caseOpen[stage.id] = det.open; LT.save(); });
   }
   const inner = document.createElement("div");
   body.appendChild(inner);
@@ -182,7 +178,7 @@ LT.stageShell = function (app, stage, stepKey, renderers) {
   bar.innerHTML = `
     <div class="bb-inner">
       <a class="btn ghost" href="${prevHref}">‹ ${prevLabel}</a>
-      <div class="bb-dots">${order.map((k, n) => `<span class="${n === i ? "on" : ""}${st.steps[k] ? " done" : ""}"></span>`).join("")}</div>
+      <div class="bb-pos">${LT.stageLabel(stage)}　${"①②③"[i]} ${DEF[i].label}</div>
       <button class="btn primary" id="nextBtn">${nextLabel} ›</button>
     </div>`;
   bar.querySelector("#nextBtn").onclick = () => {
@@ -194,7 +190,7 @@ LT.stageShell = function (app, stage, stepKey, renderers) {
 
 /* ステージ完了のお祝い（短く） */
 LT.celebrate = function (stage) {
-  LT.toast(`${stage.icon} ${LT.stageLabel(stage).split(" /")[0]}「${stage.title}」クリア！`);
+  LT.toast(`${LT.stageLabel(stage)}「${stage.title}」を終えました`);
 };
 
 /* 「予想してから答え合わせ」部品 */
@@ -202,7 +198,7 @@ LT.prediction = function (container, key, question, choices, explain, onDone) {
   const saved = LT.state.answers[key];
   const box = document.createElement("div");
   box.className = "card predict";
-  box.innerHTML = `<div class="card-label">🤔 予想してみよう</div><p class="q">${question}</p>`;
+  box.innerHTML = `<div class="card-label">予想してみよう</div><p class="q">${question}</p>`;
   const list = document.createElement("div");
   list.className = "choices";
   choices.forEach((c, i) => {
@@ -243,10 +239,10 @@ LT.writingTask = function (container, key, prompts) {
   const saved = LT.state.answers[key];
   const box = document.createElement("div");
   box.className = "card write";
-  box.innerHTML = `<div class="card-label">✏️ ${p.title}</div><p class="q">${p.text}</p>
-    ${hint ? `<p class="small">💡 書き出しのヒント：${hint}</p>` : ""}
+  box.innerHTML = `<div class="card-label">${p.title}</div><p class="q">${p.text}</p>
+    ${hint ? `<p class="small">書き出しのヒント：${hint}</p>` : ""}
     <textarea placeholder="ここに書く">${saved ? LT.esc(saved.value) : ""}</textarea>
-    ${deep ? `<details class="deeper mt"><summary>🔎 もっと深く考えたい人へ</summary><div class="deeper-body">${deep}</div></details>` : ""}
+    ${deep ? `<details class="deeper mt"><summary>もっと深く考えたい人へ</summary><div class="deeper-body">${deep}</div></details>` : ""}
     <div class="spread mt"><span class="small count">0 文字</span><button class="btn primary sm">保存する</button></div>`;
   const ta = box.querySelector("textarea"), count = box.querySelector(".count");
   count.textContent = ta.value.length + " 文字" + (saved ? "（保存済み）" : "");
@@ -280,52 +276,53 @@ LT.routes.home = function (app) {
   const resume = LT.state.lastRoute;
   const nextStage = next && next.stage;
   const resumeOk = resume && nextStage && resume.indexOf(nextStage.route) === 0;
-  const cta = !next ? { href: "#/records", label: "学習記録を見る" } :
-    resumeOk ? { href: resume, label: `続きから（${next.title}）` } : { href: next.href, label: next.key === "s0" ? "はじめる" : `${next.title} へ進む` };
+  const cta = !next ? { href: "#/map", label: "攻撃経路マップでふり返る" } :
+    resumeOk ? { href: resume, label: `続きから（${LT.stageLabel(nextStage)}　${nextStage.title}）` } : { href: next.href, label: prog.done ? `${LT.stageLabel(nextStage)}　${nextStage.title} へ進む` : "はじめる" };
 
   app.innerHTML = `
   <section class="hero">
-    <div class="hero-text">
-      <div class="eyebrow">中学生・高校生・大学生向け　個人情報漏えいの体験型教材</div>
-      <h1>なぜ個人情報は漏れるのか。<br>なぜその対策が効くのか。</h1>
-      <p>最近の実際の漏えい事件と同じ「型」の出来事を、架空の会社で再現します。あなたは<span class="badge attack">攻撃者</span>と<span class="badge defend">防御者</span>の両方になって、仕組みと対策の根拠を確かめます。</p>
-      <div class="row"><a class="btn primary lg" href="${cta.href}">▶ ${cta.label}</a><a class="btn ghost" href="#/map">攻撃経路マップ</a></div>
-    </div>
-    <div class="hero-ring">${LT.ring(prog.ratio, 132, "var(--accent)")}<div class="small center">${prog.done} / ${prog.total} 段階</div></div>
+    <div class="kicker">個人情報漏えいを、攻撃と防御の体験から学ぶ</div>
+    <h1>なぜ個人情報は漏れるのか。<br>なぜその対策が効くのか。</h1>
+    <p class="lead">最近の実際の漏えい事件と同じ「型」の出来事を、架空の会社で再現します。攻撃者と防御者の両方の立場で、各ステージを「①見る → ②破る → ③なぜ守れるか」の順に進みます。</p>
+    <div class="row"><a class="btn primary lg" href="${cta.href}">${cta.label}</a><span class="small">進み具合 ${prog.done} / ${prog.total}</span></div>
   </section>
 
-  <h2 class="section-title">学習の流れ</h2>
-  <ol class="flow" id="flow"></ol>
-
-  <div class="tile-row mt">
-    <a class="tile" href="#/map"><span class="tile-icon">🗺️</span><div><b>攻撃経路マップ</b><small>通った経路 ${LT.state.map.edges.length} / ${LT.MAP.edges.length}</small></div></a>
-    <a class="tile" href="#/glossary"><span class="tile-icon">📖</span><div><b>用語集</b><small>出てきた言葉を確かめる</small></div></a>
-    <a class="tile" href="#/guide"><span class="tile-icon">👩‍🏫</span><div><b>授業での使い方</b><small>先生向け：時間配分と進め方</small></div></a>
-    <a class="tile" href="#/records"><span class="tile-icon">📋</span><div><b>学習記録</b><small>結果を書き出す</small></div></a>
+  <div class="stats">
+    <div class="stat-card"><div class="stat-v">180<small>件</small></div><div class="stat-k">2025年に上場企業が公表した<br>個人情報の漏えい・紛失事故</div></div>
+    <div class="stat-card"><div class="stat-v">3,063<small>万人分</small></div><div class="stat-k">漏えい・紛失した人数<br>（前年の約1.9倍）</div></div>
+    <div class="stat-card"><div class="stat-v">約3<small>割</small></div><div class="stat-k">攻撃者がいなくても起きた<br>誤送信・紛失などの事故</div></div>
   </div>
-  <details class="card mt research-box"><summary><b>研究・授業評価で使う場合</b><span class="small">（はじめ／おわりのテスト・アンケート）</span></summary>
-    <p class="small mt">学習の前後で理解の変化を測るときに使います。授業で使うだけなら受けなくてもかまいません。</p>
-    <div class="tile-row">
-      <a class="tile" href="#/test/pre"><span class="tile-icon">📝</span><div><b>はじめのテスト</b><small>${LT.state.tests.pre ? "受験済み" : "学習前に受ける"}</small></div>${LT.state.tests.pre ? '<span class="badge ok">済</span>' : ""}</a>
-      <a class="tile" href="#/test/post"><span class="tile-icon">🏁</span><div><b>おわりのテスト</b><small>${LT.state.tests.post ? "受験済み" : "学習後に受ける"}</small></div>${LT.state.tests.post ? '<span class="badge ok">済</span>' : ""}</a>
-      <a class="tile" href="#/survey"><span class="tile-icon">💬</span><div><b>使いやすさアンケート</b><small>${LT.state.scores["survey.sus"] ? "回答済み" : "最後に答える"}</small></div>${LT.state.scores["survey.sus"] ? '<span class="badge ok">済</span>' : ""}</a>
+  <p class="small center">出典：東京商工リサーチ調べ（導入ステージの「実際の事件」に詳細）</p>
+
+  <h2 class="sec">ステージ</h2>
+  <div class="stage-grid" id="stageGrid"></div>
+
+  <h2 class="sec">そのほか</h2>
+  <div class="link-list">
+    <a href="#/map"><b>攻撃経路マップ</b><span>通った経路が1枚の図に描き足されていきます（${LT.state.map.edges.length} / ${LT.MAP.edges.length}）</span></a>
+    <a href="#/glossary"><b>用語集</b><span>出てきた言葉の意味</span></a>
+    <a href="#/guide"><b>授業での使い方</b><span>先生向け：対象・時間配分・注意点</span></a>
+    <a href="#/records"><b>学習記録</b><span>進み具合や回答を CSV / JSON / Markdown で書き出す</span></a>
+  </div>
+
+  <details class="research-box"><summary>研究・授業評価で使う場合（はじめ／おわりのテスト・アンケート）</summary>
+    <p class="small">学習の前後で理解の変化を測るときに使います。授業で使うだけなら受けなくてもかまいません。</p>
+    <div class="link-list">
+      <a href="#/test/pre"><b>はじめのテスト</b><span>${LT.state.tests.pre ? "受験済み" : "学習の前に受ける"}</span></a>
+      <a href="#/test/post"><b>おわりのテスト</b><span>${LT.state.tests.post ? "受験済み" : "学習の後に受ける"}</span></a>
+      <a href="#/survey"><b>使いやすさアンケート</b><span>${LT.state.scores["survey.sus"] ? "回答済み" : "最後に答える"}</span></a>
     </div></details>`;
 
-  const ol = app.querySelector("#flow");
+  const grid = app.querySelector("#stageGrid");
   items.forEach(it => {
-    const li = document.createElement("li");
-    const isNext = next && next.key === it.key;
-    li.className = "flow-item" + (it.done ? " done" : "") + (isNext ? " next" : "") + (it.stage ? " is-stage" : "");
-    if (it.stage) li.style.setProperty("--stage", it.stage.color);
-    const status = it.done ? '<span class="badge ok">済</span>' : isNext ? '<span class="badge accent">次はここ</span>' : "";
-    if (it.stage) {
-      li.innerHTML = `<a href="${it.href}"><span class="flow-dot">${it.done ? "✓" : it.icon}</span>
-        <span class="flow-body"><span class="eyebrow">${LT.stageLabel(it.stage).split(" /")[0]}・約${it.stage.min}分</span><b>${it.stage.title}</b><span class="small">${it.stage.desc}</span>
-        <span class="st-prog"><span class="bar"><span style="width:${it.part / it.total * 100}%"></span></span><span class="small">${it.part}/${it.total}</span></span></span>${status}</a>`;
-    } else {
-      li.innerHTML = `<a href="${it.href}"><span class="flow-dot">${it.done ? "✓" : it.icon}</span><span class="flow-body"><b>${it.title}</b></span>${status}</a>`;
-    }
-    ol.appendChild(li);
+    const s = it.stage, isNext = next && next.key === it.key;
+    const a = document.createElement("a");
+    a.className = "stage-card" + (it.done ? " done" : "") + (isNext ? " next" : "");
+    a.href = it.href;
+    const prog = s.id === "final" ? (it.done ? "完了" : "") : ["見る", "破る", "守る"].map((l, k) => `<span class="${k < it.part ? "on" : ""}">${l}</span>`).join("");
+    a.innerHTML = `<div class="sc-top"><span class="sc-no">${s.no === 0 ? "0" : s.no === "★" ? "★" : s.no}</span>${isNext ? '<span class="sc-next">次はここ</span>' : it.done ? '<span class="sc-done">完了</span>' : ""}</div>
+      <h3>${s.title}</h3><p>${s.desc}</p>${LT.tagsHTML(s.tags)}<div class="sc-prog">${prog}<span class="sc-min">約${s.min}分</span></div>`;
+    grid.appendChild(a);
   });
 };
 
@@ -374,7 +371,7 @@ LT.routes.guide = function (app) {
 LT.routes.ethics = function (app) {
   app.innerHTML = `
   <div class="card narrow">
-    <div class="center"><div style="font-size:3rem">🛡️</div><h1>はじめに：守るために学ぶ</h1>
+    <div class="center"><div class="kicker">はじめに</div><h1>守るために学ぶ</h1>
     <p class="muted">この教材には、攻撃者の立場で「個人情報を盗み出す」体験が含まれます。始める前に、4つの約束を確認してください。</p></div>
     <ol class="promise">
       <li><b>ここで扱うものはすべて架空です。</b><br>登場する企業・サービス・人物・パスワード・メールはすべて架空です。本物のパスワードや、自分や他人の個人情報は入力しないでください。</li>
@@ -407,11 +404,11 @@ LT.routes.records = function (app) {
     <div class="spread"><h2 class="mb0">書き出し</h2><span class="small">参加者ID <code>${LT.esc(LT.state.learnerId)}</code></span></div>
     <p class="small">記録はこの端末のブラウザ内にだけ保存されています。卒業研究のデータとして使うときは書き出してください。</p>
     <div class="export-grid">
-      <button class="btn" id="exMd"><span>📄</span>まとめ<br><small>Markdown</small></button>
-      <button class="btn" id="exCsv"><span>📊</span>操作ログ<br><small>CSV</small></button>
-      <button class="btn" id="exMeas"><span>📈</span>実測値<br><small>CSV</small></button>
-      <button class="btn" id="exTest"><span>📝</span>テスト・アンケート<br><small>CSV</small></button>
-      <button class="btn" id="exJson"><span>🗂️</span>全データ<br><small>JSON</small></button>
+      <button class="btn" id="exMd">まとめ<br><small>Markdown</small></button>
+      <button class="btn" id="exCsv">操作ログ<br><small>CSV</small></button>
+      <button class="btn" id="exMeas">実測値<br><small>CSV</small></button>
+      <button class="btn" id="exTest">テスト・アンケート<br><small>CSV</small></button>
+      <button class="btn" id="exJson">全データ<br><small>JSON</small></button>
     </div>
   </div>
   ${pre || post ? `<div class="card"><h2>テストの変化</h2>${LT.prePostView()}</div>` : ""}

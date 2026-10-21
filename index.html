@@ -4,20 +4,29 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="description" content="個人情報漏えいの仕組みと対策を、攻撃と防御の体験から学ぶWeb教材">
-<meta name="theme-color" content="#2b5fd9">
+<meta name="theme-color" content="#ffffff">
 <title>LeakTrace（リークトレース）</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <header class="topbar">
-  <a href="#/home" class="brand" aria-label="LeakTrace ホーム"><span class="logo">LT</span><span class="brand-text">Leak<span>Trace</span></span></a>
+  <div class="topbar-in">
+    <a href="#/home" class="brand" aria-label="LeakTrace ホーム"><span class="brand-name">LeakTrace</span><span class="brand-sub">漏えいの経路をたどって学ぶ情報セキュリティ</span></a>
+    <button class="icon-btn" id="fontBtn" title="文字の大きさを切り替える" aria-pressed="false">文字<small>大</small></button>
+  </div>
   <nav class="topnav" id="topnav" aria-label="メインメニュー">
-    <a href="#/home" data-nav="home"><span class="ni">🏠</span><span class="nl">ホーム</span></a>
-    <a href="#/map" data-nav="map"><span class="ni">🗺️</span><span class="nl">マップ</span></a>
-    <a href="#/glossary" data-nav="glossary"><span class="ni">📖</span><span class="nl">用語集</span></a>
-    <a href="#/records" data-nav="records"><span class="ni">📋</span><span class="nl">学習記録</span></a>
+    <a href="#/home" data-nav="home">ホーム</a>
+    <a href="#/stage/0" data-nav="s0">導入</a>
+    <a href="#/stage/1" data-nav="s1">①不正ログイン</a>
+    <a href="#/stage/2" data-nav="s2">②フィッシング</a>
+    <a href="#/stage/3" data-nav="s3">③ランサムウェア</a>
+    <a href="#/stage/4" data-nav="s4">④人為ミス</a>
+    <a href="#/final" data-nav="final">まとめ</a>
+    <span class="nav-sep"></span>
+    <a href="#/map" data-nav="map">マップ</a>
+    <a href="#/glossary" data-nav="glossary">用語集</a>
+    <a href="#/records" data-nav="records">学習記録</a>
   </nav>
-  <button class="icon-btn" id="fontBtn" title="文字の大きさを切り替える" aria-pressed="false">あ<small>A</small></button>
 </header>
 
 <main id="app" class="app">

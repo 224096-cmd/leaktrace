@@ -99,9 +99,9 @@ LT.caseCard = function (id) {
   if (!c) return "";
   const intro = LT.isIntro && LT.isIntro();
   const facts = intro ? c.facts.slice(0, 2) : c.facts;
-  return `<details class="case" ${LT.state.ui && LT.state.ui.caseClosed && LT.state.ui.caseClosed[id] ? "" : "open"} data-case="${id}">
-    <summary><span class="case-tag">📁 実際の事件ファイル：${c.label}</span><span class="case-when">${c.when}</span></summary>
-    <h3 class="case-title">${c.title}</h3>
+  const open = LT.state.ui && LT.state.ui.caseOpen && LT.state.ui.caseOpen[id];
+  return `<details class="case" ${open ? "open" : ""} data-case="${id}">
+    <summary><span class="case-tag">実際の事件：${c.label}</span><span class="case-when">${c.when}</span><span class="case-title">${c.title}</span><span class="case-more">詳しく見る</span></summary>
     <ul class="case-facts">${facts.map(f => `<li>${f}</li>`).join("")}</ul>
     <div class="case-src"><b>出典</b>${c.sources.map(s => `<a href="${s.url}" target="_blank" rel="noopener">${LT.esc(s.t)}</a>`).join("")}</div>
     <p class="case-note">この教材では、同じ「型」の出来事を架空の会社で再現して体験します。</p>

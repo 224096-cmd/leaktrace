@@ -57,7 +57,7 @@ LT.routes.test = async function (app, parts) {
 
   app.innerHTML = `
   <div class="card narrow center">
-    <div style="font-size:3rem">${phase === "pre" ? "📝" : "🏁"}</div>
+    
     <h1>${name}</h1>
     <p class="muted">${phase === "pre" ? "学習を始める前の、いまの自分を確かめます。" : "学習を終えたあとの自分を確かめます。はじめのテストと比べられます。"}</p>
     <div class="stat-row mt" style="text-align:left">
@@ -148,12 +148,12 @@ LT.testResult = function (app, phase) {
   const pre = LT.state.tests.pre, post = LT.state.tests.post;
   let body;
   if (phase === "pre") {
-    body = `<div class="card narrow center"><div style="font-size:3rem">✅</div><h1>はじめのテスト 完了</h1>
+    body = `<div class="card narrow center"><h1>はじめのテスト 完了</h1>
       <p class="muted">おつかれさまでした。正解は、全部の学習が終わったあとの「おわりのテスト」で確かめられます。</p>
       <a class="btn primary lg block mt" href="#/stage/1">ステージ1を始める ›</a></div>`;
   } else {
     const lik = (k, i) => `<td>${pre ? pre[k][i] : "—"}</td><td>${post[k][i]}</td>`;
-    body = `<div class="narrow"><div class="card center"><div style="font-size:3rem">🎉</div><h1>おわりのテスト 完了</h1>
+    body = `<div class="narrow"><div class="card center"><h1>おわりのテスト 完了</h1>
       <div class="stat-row mt" style="text-align:left">
         <div class="stat"><div class="k">正答（はじめ → おわり）</div><div class="v">${pre ? pre.items.filter(x => x.correct).length + " → " : ""}${correct} <small>/ ${r.items.length}</small></div></div>
         <div class="stat"><div class="k">自己評価の平均</div><div class="v">${pre ? avg(pre.self) + " → " : ""}${avg(post.self)}</div></div>

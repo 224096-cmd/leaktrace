@@ -49,7 +49,7 @@ LT.routes.survey = function (app) {
     LT.state.survey = { t: new Date().toISOString(), layer: LT.state.layer, items, sus, good: app.querySelector("#good").value.trim(), comment: app.querySelector("#comment").value.trim() };
     LT.setScore("survey.sus", { correct: sus, total: 100, percent: sus, note: "SUSスコア（0〜100）" });
     LT.save();
-    app.querySelector("#done").innerHTML = `<div class="card ok center mt fade-in"><div style="font-size:2.4rem">🙏</div><h2>ご協力ありがとうございました</h2><p>回答を保存しました。これで学習はすべて終わりです。</p><a class="btn primary" href="#/records">学習記録を見る ›</a></div>`;
+    app.querySelector("#done").innerHTML = `<div class="card ok center mt fade-in"><h2>ご協力ありがとうございました</h2><p>回答を保存しました。これで学習はすべて終わりです。</p><a class="btn primary" href="#/records">学習記録を見る ›</a></div>`;
     app.querySelector("#done").scrollIntoView({ behavior: "smooth" });
   };
 };

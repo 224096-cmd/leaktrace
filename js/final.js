@@ -51,7 +51,7 @@ LT.FINAL.ACTIONS = [
 ];
 LT.FINAL.notice = function (box) {
   box.innerHTML = `<div class="card">
-    <h2>📩 こんなメールが届いたら？</h2>
+    <h2>こんなメールが届いたら？</h2>
     <div class="mail"><div class="hd"><div class="subj">【重要】個人情報漏えいに関するお知らせとお詫び</div><div><span class="avatar">モ</span>モグモグショップ &lt;info@mogumogu-shop-support.com&gt;</div></div>
       <div class="bd">いつもご利用ありがとうございます。当社のサーバーが不正アクセスを受け、お客様のお名前、メールアドレス、パスワード等が流出した可能性があります。
 下記より、お客様の情報が含まれるかをご確認ください。
@@ -86,7 +86,7 @@ LT.routes.final = function (app) {
   LT.startStage("final");
   LT.current.stage = "final";
   app.innerHTML = `
-  <div class="stage-head"><a href="#/home" class="back" aria-label="ホームへ戻る">‹</a><span class="stage-icon">🧭</span><div class="grow"><div class="eyebrow">まとめ</div><h1>漏えいの後に</h1><div class="small">通知が届いたら・自分の行動</div></div></div>
+  <div class="stage-head"><div class="kicker">まとめ</div><h1>漏えいの後に<span class="h-sub"> — 通知が届いたら・自分の行動</span></h1>${LT.tagsHTML(["通知への対応", "ふり返り"])}</div>
   ${LT.caseCard("final")}
   <div id="notice"></div>
   <h2 class="section-title">自分の行動をふり返る</h2>
