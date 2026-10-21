@@ -2,7 +2,7 @@
 window.LT = window.LT || {};
 
 LT.STORE_KEY = "leaktrace_v1";
-LT.VERSION = "0.9.2";
+LT.VERSION = "0.9.3";
 
 LT.defaultState = function () {
   return {
@@ -242,7 +242,7 @@ LT.exportMarkdown = function () {
     const t = st.tests[ph];
     if (t) md += `\n### ${ph === "pre" ? "はじめ" : "おわり"}のテスト\n\n- 実施: ${t.t}\n- 正答: ${t.items.filter(x => x.correct).length}/${t.items.length}\n- 所要時間: ${t.seconds} 秒\n`;
   });
-  if (st.survey && st.survey.sus !== undefined) md += `\n### 使いやすさ（SUS）\n\n- SUSスコア: ${st.survey.sus}（0〜100、68が平均的な目安）\n- 自由記述: ${st.survey.comment || "（なし）"}\n`;
+  if (st.survey && st.survey.sus !== undefined) md += `\n### 使いやすさ（SUSに基づく改変版：全項目を肯定文に統一）\n\n- スコア: ${st.survey.sus}（0〜100。標準SUSの平均の目安68とは直接比較できない）\n- 自由記述: ${st.survey.comment || "（なし）"}\n`;
   md += `\n## 予想・記述の回答\n\n`;
   const ak = Object.keys(st.answers);
   if (!ak.length) md += "（なし）\n";

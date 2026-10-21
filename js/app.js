@@ -8,7 +8,7 @@ LT.LAYERS = {
   practice: { name: "体験", who: "高校生〜", icon: "🔧", desc: "攻撃の要素を自分で選んで組み立て、対策の効き目を自分で確かめる。" },
   inquiry:  { name: "探究", who: "大学生〜", icon: "🔬", desc: "条件を変えて測定し、根拠を説明する。測定値をCSVで書き出せる。" }
 };
-LT.RESEARCH_HASH = "b9ca61ae9d7b56d65901aaaa2bbeb2539a9a93c8231390c84a4c26ff2851360f";
+LT.RESEARCH_HASH = "bc7bca63a14c7cc1bb2ecd7774fb2ef713ae25d046c9b63d90a169052a49b3ab";
 
 LT.STAGES = [
   { id: "s0", tags: ["統計","個人情報とは","3つの要素"], no: 0, icon: "📊", color: "#455a64", title: "漏えいはなぜ起きる？", sub: "統計・個人情報とは・3つの要素", desc: "最近の漏えい事故の数字を読み、何が「個人情報」なのか、守るべき3つの要素は何かを確かめる。", route: "#/stage/0", min: 8,
